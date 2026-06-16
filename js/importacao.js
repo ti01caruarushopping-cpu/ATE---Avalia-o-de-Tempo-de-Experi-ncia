@@ -200,11 +200,6 @@ async function confirmarImportacao() {
 
   const validos = ATE.importDados.filter(r => r.nome && r.data_admissao);
 
-  if (API_URL.includes("SEU_DEPLOYMENT_ID")) {
-    _demoImportar(validos);
-    return;
-  }
-
   const res = await api("importarDados", { registros: validos });
   if (res.ok) {
     _mostrarResultado(res);

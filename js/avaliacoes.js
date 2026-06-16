@@ -214,13 +214,6 @@ async function confirmarAvaliacao() {
     observacao: document.getElementById(`obs-${_slug(c)}`)?.value || ""
   }));
 
-  if (API_URL.includes("SEU_DEPLOYMENT_ID")) {
-    _demoSalvarAvaliacao(idColab, tipo);
-    fecharModalAvaliacao();
-    toast("Avaliação registrada com sucesso!", "success");
-    return;
-  }
-
   const res = await api("salvarAvaliacao", {
     id_colaborador: idColab, tipo_avaliacao: tipo,
     data_avaliacao: inputParaData(data), avaliador, criterios
@@ -248,13 +241,9 @@ async function gerarRelatorio(tipo) {
   document.getElementById("report-title").textContent = titles[tipo] || tipo;
 
   let dados = [];
-  if (API_URL.includes("SEU_DEPLOYMENT_ID")) {
-    dados = _filtrarRelatorioDemo(tipo);
-  } else {
-    const res = await api("gerarRelatorio", { tipo });
-    if (!res.ok) { toast("Erro ao gerar relatório", "error"); return; }
-    dados = tipo === "por_setor" ? _flattenPorSetor(res.data) : res.data;
-  }
+  const res = await api("gerarRelatorio", { tipo });
+  if (!res.ok) { toast("Erro ao gerar relatório", "error"); return; }
+  dados = tipo === "por_setor" ? _flattenPorSetor(res.data) : (res.data || []);
 
   ATE.relatorioAtual = dados;
 
@@ -292,13 +281,9 @@ function _filtrarRelatorioDemo(tipo) {
 let _histDados = [], _histPagina = 1;
 
 async function carregarHistorico() {
-  if (API_URL.includes("SEU_DEPLOYMENT_ID")) {
-    _histDados = _demoHistorico();
-    filtrarHistorico();
-    return;
-  }
   const res = await api("getHistorico");
   if (res.ok) { _histDados = res.data || []; filtrarHistorico(); }
+  else toast(res.msg || "Erro ao carregar histórico.", "error");
 }
 
 function filtrarHistorico() {

@@ -117,15 +117,30 @@ function registrarHistorico(idColaborador, acao, usuario, detalhes) {
 // ============================================================
 function login(data) {
   const aba = SS.getSheetByName(ABA_USUARIOS);
-  if (!aba) return { ok: false, msg: "Aba Usuarios não encontrada" };
+  if (!aba) return { ok: false, msg: "Aba Usuarios não encontrada. Execute 'Inicializar Planilhas' primeiro." };
 
   const rows = aba.getDataRange().getValues();
+  if (rows.length <= 1) return { ok: false, msg: "Nenhum usuário cadastrado na planilha." };
+
+  // Normalizar credenciais recebidas
+  const usuarioInput = String(data.usuario || "").trim().toLowerCase();
+  const senhaInput   = String(data.senha   || "").trim();
+
   for (let i = 1; i < rows.length; i++) {
     const [id, usuario, senha, perfil, nome, ativo] = rows[i];
-    if (usuario === data.usuario && senha === data.senha && ativo === true) {
-      return { ok: true, perfil, nome, usuario, id };
+
+    // Comparação insensível a maiúsculas para usuário
+    const usuarioMatch = String(usuario || "").trim().toLowerCase() === usuarioInput;
+    const senhaMatch   = String(senha   || "").trim() === senhaInput;
+
+    // ativo pode vir como boolean true, string "TRUE", string "true" ou número 1
+    const ativoOk = ativo === true || String(ativo).toUpperCase() === "TRUE" || ativo === 1;
+
+    if (usuarioMatch && senhaMatch && ativoOk) {
+      return { ok: true, perfil: String(perfil), nome: String(nome), usuario: String(usuario).trim(), id: String(id) };
     }
   }
+
   return { ok: false, msg: "Usuário ou senha inválidos" };
 }
 

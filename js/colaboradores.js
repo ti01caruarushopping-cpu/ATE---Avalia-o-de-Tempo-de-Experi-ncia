@@ -6,15 +6,12 @@ let _colabFiltrados = [];
 let _colabPagina = 1;
 
 async function carregarColaboradores() {
-  if (API_URL.includes("SEU_DEPLOYMENT_ID")) {
-    ATE.colaboradores = _demoColaboradores();
-    _renderColaboradores();
-    return;
-  }
   const res = await api("getColaboradores");
   if (res.ok) {
     ATE.colaboradores = res.data || [];
     _renderColaboradores();
+  } else {
+    toast(res.msg || "Erro ao carregar colaboradores.", "error");
   }
 }
 
@@ -177,14 +174,6 @@ async function salvarColaborador() {
   }
 
   const payload = { nome, data_admissao: inputParaData(admissao), setor, cargo, lider_imediato: lider, empresa };
-
-  if (API_URL.includes("SEU_DEPLOYMENT_ID")) {
-    _demoSalvarColab(id, payload);
-    fecharModalColaborador();
-    toast(id ? "Colaborador atualizado!" : "Colaborador cadastrado!", "success");
-    return;
-  }
-
   const action = id ? "editarColaborador" : "salvarColaborador";
   const res = await api(action, { ...payload, id });
   if (res.ok) {
@@ -198,12 +187,6 @@ async function salvarColaborador() {
 
 async function excluirColaborador(id, nome) {
   if (!confirm(`Excluir "${nome}"? Esta ação não pode ser desfeita.`)) return;
-
-  if (API_URL.includes("SEU_DEPLOYMENT_ID")) {
-    ATE.colaboradores = ATE.colaboradores.filter(c => c.id !== id);
-    _renderColaboradores();
-    toast("Colaborador excluído.", "success"); return;
-  }
 
   const res = await api("excluirColaborador", { id });
   if (res.ok) {

@@ -3,13 +3,9 @@
 // ============================================================
 
 async function carregarDashboard() {
-  // MODO DEMO — gera dados simulados
-  if (API_URL.includes("SEU_DEPLOYMENT_ID")) {
-    renderDashboard(_demoDashboard());
-    return;
-  }
   const res = await api("getDashboard");
   if (res.ok) renderDashboard(res);
+  else toast(res.msg || "Erro ao carregar dashboard.", "error");
 }
 
 function renderDashboard(d) {
