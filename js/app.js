@@ -2,8 +2,8 @@
 // ATE — app.js  |  Core: auth, routing, API, utilities
 // ============================================================
 
-// ── CONFIG ── Substitua pela URL do seu Web App publicado
-const API_URL = "https://script.google.com/macros/s/AKfycbxIPxTR8zh8lvq_aFQKsMhcZBgsKv4dHwwQbMebv1k9kCb7q-pwQTik_BrAoVBaI74/exec";
+// ── CONFIG ── URL do Web App publicado no Google Apps Script
+const API_URL = "https://script.google.com/macros/s/AKfycbxUHLDu_4XSdtRnzCEADV1X5OiZua1mCmyx5_mN5w6H7eXoBZEr7c2bHzIIXFftSofr/exec";
 
 // ── ESTADO GLOBAL ──
 const ATE = {
@@ -31,23 +31,30 @@ async function api(action, data = {}) {
       data: { ...data, usuario: ATE.usuario, perfil: ATE.perfil, nome: ATE.nome }
     });
 
-    // Apps Script aceita GET com parâmetro ?payload=...
-    // Evita problemas de CORS e redirecionamento de POST→GET
     const url = `${API_URL}?payload=${encodeURIComponent(payload)}`;
+    console.log(`[ATE] → ${action}`, data);
 
-    const resp = await fetch(url, {
-      method: "GET",
-      redirect: "follow"
-    });
+    const resp = await fetch(url, { method: "GET", redirect: "follow" });
 
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    // Ler o texto bruto antes de parsear (para diagnóstico)
+    const texto = await resp.text();
+    console.log(`[ATE] ← ${action} (${resp.status}):`, texto.substring(0, 300));
 
-    const json = await resp.json();
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${texto.substring(0, 100)}`);
+
+    let json;
+    try {
+      json = JSON.parse(texto);
+    } catch {
+      // Se a resposta não for JSON (ex: HTML de erro do Google), mostrar mensagem clara
+      throw new Error("Resposta inválida do servidor. Verifique se o Apps Script foi republicado corretamente.");
+    }
+
     return json;
 
   } catch (err) {
-    console.error("API Error:", err);
-    toast("Erro de comunicação com o servidor. Verifique o console.", "error");
+    console.error(`[ATE] Erro em '${action}':`, err);
+    toast(`Erro: ${err.message}`, "error");
     return { ok: false, msg: err.message };
   } finally {
     mostrarLoading(false);
@@ -72,13 +79,6 @@ async function fazerLogin() {
   erroEl.classList.add("hidden");
   btnTxt.textContent = "Entrando...";
 
-  // MODO DEMO (sem backend configurado)
-  if (API_URL.includes("SEU_DEPLOYMENT_ID")) {
-    iniciarSessaoDemo(usuario, senha);
-    btnTxt.textContent = "Entrar";
-    return;
-  }
-
   const res = await api("login", { usuario, senha });
   btnTxt.textContent = "Entrar";
 
@@ -87,21 +87,6 @@ async function fazerLogin() {
   } else {
     erroEl.textContent = res.msg || "Credenciais inválidas.";
     erroEl.classList.remove("hidden");
-  }
-}
-
-function iniciarSessaoDemo(usuario, senha) {
-  const usuarios = {
-    "admin":  { perfil: "administrador", nome: "Administrador RH",  senha: "admin2026" },
-    "gestor": { perfil: "gestor",        nome: "Gestor Padrão",     senha: "gestor2026" }
-  };
-  const u = usuarios[usuario];
-  if (u && u.senha === senha) {
-    iniciarSessao({ ok: true, perfil: u.perfil, nome: u.nome, usuario });
-  } else {
-    const el = document.getElementById("login-erro");
-    el.textContent = "Usuário ou senha inválidos.";
-    el.classList.remove("hidden");
   }
 }
 
