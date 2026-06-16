@@ -3,7 +3,7 @@
 // ============================================================
 
 // ── CONFIG ── URL do Web App publicado no Google Apps Script
-const API_URL = "https://script.google.com/macros/s/AKfycbx4NGey-tineCzCPeadBfHg9cXllRCaUhcDzACiCeiT-ZJpcM9WygQxgpBU3WIvXEza/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbzDxGV_d0uvkUl7NX-DzgCZPcx_Hdyj3Zp6YYt0eczcykJbM9tFkPXHmZ-qW3o0jRBF/exec";
 
 // ── ESTADO GLOBAL ──
 const ATE = {
