@@ -3,7 +3,7 @@
 // ============================================================
 
 // ── CONFIG ── Substitua pela URL do seu Web App publicado
-const API_URL = "https://script.google.com/macros/s/AKfycbzQ4xHrKRY_VO7Y1maQMERni3zQ26m-I24lknYoykTCGmIbWwqixPucXJlBOG08WbbA/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbxIPxTR8zh8lvq_aFQKsMhcZBgsKv4dHwwQbMebv1k9kCb7q-pwQTik_BrAoVBaI74/exec";
 
 // ── ESTADO GLOBAL ──
 const ATE = {
@@ -25,16 +25,29 @@ const POR_PAGINA = 15;
 async function api(action, data = {}) {
   try {
     mostrarLoading(true);
-    const resp = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain" },
-      body: JSON.stringify({ action, data: { ...data, usuario: ATE.usuario, perfil: ATE.perfil, nome: ATE.nome } })
+
+    const payload = JSON.stringify({
+      action,
+      data: { ...data, usuario: ATE.usuario, perfil: ATE.perfil, nome: ATE.nome }
     });
+
+    // Apps Script aceita GET com parâmetro ?payload=...
+    // Evita problemas de CORS e redirecionamento de POST→GET
+    const url = `${API_URL}?payload=${encodeURIComponent(payload)}`;
+
+    const resp = await fetch(url, {
+      method: "GET",
+      redirect: "follow"
+    });
+
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+
     const json = await resp.json();
     return json;
+
   } catch (err) {
     console.error("API Error:", err);
-    toast("Erro de comunicação com o servidor", "error");
+    toast("Erro de comunicação com o servidor. Verifique o console.", "error");
     return { ok: false, msg: err.message };
   } finally {
     mostrarLoading(false);

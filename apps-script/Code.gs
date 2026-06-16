@@ -15,12 +15,30 @@ const ABA_USUARIOS      = "Usuarios";
 // ============================================================
 // ROTEADOR PRINCIPAL
 // ============================================================
-function doPost(e) {
-  try {
-    const payload = JSON.parse(e.postData.contents);
-    const { action, data } = payload;
 
+// O Google Apps Script redireciona POST para GET em alguns casos.
+// A solução é enviar tudo via GET com o payload em parâmetro,
+// e manter doPost como fallback.
+
+function _rotear(e) {
+  try {
+    // Tenta ler do POST (postData.contents)
+    let payload;
+    if (e && e.postData && e.postData.contents) {
+      payload = JSON.parse(e.postData.contents);
+    }
+    // Fallback: parâmetro GET "payload"
+    else if (e && e.parameter && e.parameter.payload) {
+      payload = JSON.parse(decodeURIComponent(e.parameter.payload));
+    }
+    // Nenhum dado — retorna status de saúde
+    else {
+      return _resp({ ok: true, msg: "ATE API online. Use payload via GET ou POST." });
+    }
+
+    const { action, data } = payload;
     let result;
+
     switch (action) {
       case "login":                result = login(data); break;
       case "getDashboard":         result = getDashboard(data); break;
@@ -33,22 +51,24 @@ function doPost(e) {
       case "getHistorico":         result = getHistorico(data); break;
       case "importarDados":        result = importarDados(data); break;
       case "gerarRelatorio":       result = gerarRelatorio(data); break;
-      default:                     result = { ok: false, msg: "Ação desconhecida" };
+      default:                     result = { ok: false, msg: "Ação desconhecida: " + action };
     }
 
-    return ContentService
-      .createTextOutput(JSON.stringify(result))
-      .setMimeType(ContentService.MimeType.JSON);
+    return _resp(result);
+
   } catch (err) {
-    return ContentService
-      .createTextOutput(JSON.stringify({ ok: false, msg: err.message }))
-      .setMimeType(ContentService.MimeType.JSON);
+    return _resp({ ok: false, msg: err.message });
   }
 }
 
-function doGet(e) {
-  return doPost(e);
+function _resp(obj) {
+  return ContentService
+    .createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
 }
+
+function doPost(e) { return _rotear(e); }
+function doGet(e)  { return _rotear(e); }
 
 // ============================================================
 // UTILITÁRIOS
