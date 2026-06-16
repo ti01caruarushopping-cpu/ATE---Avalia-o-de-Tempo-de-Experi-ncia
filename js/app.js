@@ -31,12 +31,16 @@ async function api(action, data = {}) {
       data: { ...data, usuario: ATE.usuario, perfil: ATE.perfil, nome: ATE.nome }
     });
 
-    const url = `${API_URL}?payload=${encodeURIComponent(payload)}`;
     console.log(`[ATE] → ${action}`, data);
 
-    const resp = await fetch(url, { method: "GET", redirect: "follow" });
+    // Mudando para POST: Os dados vão encapsulados no body de forma limpa e segura
+    const resp = await fetch(API_URL, { 
+      method: "POST",
+      mode: "cors",
+      body: payload,
+      redirect: "follow"
+    });
 
-    // Ler o texto bruto antes de parsear (para diagnóstico)
     const texto = await resp.text();
     console.log(`[ATE] ← ${action} (${resp.status}):`, texto.substring(0, 300));
 
@@ -46,7 +50,6 @@ async function api(action, data = {}) {
     try {
       json = JSON.parse(texto);
     } catch {
-      // Se a resposta não for JSON (ex: HTML de erro do Google), mostrar mensagem clara
       throw new Error("Resposta inválida do servidor. Verifique se o Apps Script foi republicado corretamente.");
     }
 
