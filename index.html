@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ATE — Avaliação de Tempo de Experiência</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+<!-- ═══════════════ LOGIN ═══════════════ -->
+<div id="login-screen" class="login-screen">
+  <div class="login-card">
+    <div class="login-brand">
+      <div class="login-icon">
+        <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="40" height="40" rx="10" fill="#0F52BA"/>
+          <path d="M20 8C13.37 8 8 13.37 8 20s5.37 12 12 12 12-5.37 12-12S26.63 8 20 8zm0 4a3 3 0 110 6 3 3 0 010-6zm0 17.2c-4.17 0-7.87-2.13-10-5.37.05-3.32 6.67-5.13 10-5.13 3.32 0 9.95 1.81 10 5.13-2.13 3.24-5.83 5.37-10 5.37z" fill="#ffffff"/>
+        </svg>
+      </div>
+      <div>
+        <h1>ATE</h1>
+        <p>Avaliação de Tempo de Experiência</p>
+      </div>
+    </div>
+
+    <div class="login-form">
+      <div class="form-group">
+        <label>Usuário</label>
+        <input type="text" id="login-usuario" placeholder="Digite seu usuário" autocomplete="username" />
+      </div>
+      <div class="form-group">
+        <label>Senha</label>
+        <div class="input-icon-wrap">
+          <input type="password" id="login-senha" placeholder="Digite sua senha" autocomplete="current-password" />
+          <button type="button" class="btn-toggle-senha" onclick="toggleSenha()">
+            <svg id="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+      <div id="login-erro" class="login-erro hidden"></div>
+      <button class="btn-primary btn-block" onclick="fazerLogin()">
+        <span id="login-txt">Entrar</span>
+      </button>
+    </div>
+
+    <p class="login-info">Padrão: <code>admin / admin2026</code></p>
+  </div>
+</div>
+
+<!-- ═══════════════ APP PRINCIPAL ═══════════════ -->
+<div id="app" class="app hidden">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-brand">
+        <div class="brand-icon">
+          <svg viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill="#0F52BA"/><path d="M16 6C10.48 6 6 10.48 6 16s4.48 10 10 10 10-4.48 10-10S21.52 6 16 6zm0 3a2.5 2.5 0 110 5 2.5 2.5 0 010-5zm0 14.3c-3.47 0-6.56-1.77-8.33-4.47.04-2.77 5.56-4.28 8.33-4.28 2.76 0 8.3 1.51 8.33 4.28-1.77 2.7-4.86 4.47-8.33 4.47z" fill="white"/></svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">ATE</span>
+          <span class="brand-sub">RH · Caruaru Shopping</span>
+        </div>
+      </div>
+      <button class="sidebar-close" onclick="toggleSidebar()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <div class="user-badge">
+      <div class="user-avatar" id="sidebar-avatar">A</div>
+      <div class="user-info">
+        <span class="user-name" id="sidebar-nome">Usuário</span>
+        <span class="user-role" id="sidebar-perfil">Perfil</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <button class="nav-item active" data-page="dashboard" onclick="navigateTo('dashboard')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </button>
+      <button class="nav-item" data-page="colaboradores" onclick="navigateTo('colaboradores')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+        Colaboradores
+      </button>
+      <button class="nav-item" data-page="avaliacoes" onclick="navigateTo('avaliacoes')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+        Avaliações
+      </button>
+      <button class="nav-item" data-page="importacao" onclick="navigateTo('importacao')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Importação
+      </button>
+      <button class="nav-item" data-page="relatorios" onclick="navigateTo('relatorios')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Relatórios
+      </button>
+      <button class="nav-item" data-page="historico" onclick="navigateTo('historico')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Histórico
+      </button>
+    </nav>
+
+    <button class="nav-item nav-logout" onclick="fazerLogout()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Sair
+    </button>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    <header class="topbar">
+      <button class="topbar-menu" onclick="toggleSidebar()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div class="topbar-title" id="topbar-title">Dashboard</div>
+      <div class="topbar-actions">
+        <div class="notif-badge" id="notif-count">0</div>
+      </div>
+    </header>
+
+    <!-- PAGES -->
+    <div class="page-content">
+
+      <!-- DASHBOARD -->
+      <section id="page-dashboard" class="page active">
+        <div class="page-header">
+          <h2>Visão Geral</h2>
+          <button class="btn-secondary" onclick="carregarDashboard()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+            Atualizar
+          </button>
+        </div>
+
+        <div class="kpi-grid" id="kpi-grid">
+          <div class="kpi-card" data-color="blue">
+            <div class="kpi-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+            </div>
+            <div class="kpi-info">
+              <span class="kpi-label">Em Experiência</span>
+              <span class="kpi-value" id="k-em-experiencia">—</span>
+            </div>
+          </div>
+          <div class="kpi-card" data-color="amber">
+            <div class="kpi-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <div class="kpi-info">
+              <span class="kpi-label">Pendentes</span>
+              <span class="kpi-value" id="k-pendentes">—</span>
+            </div>
+          </div>
+          <div class="kpi-card" data-color="red">
+            <div class="kpi-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+            <div class="kpi-info">
+              <span class="kpi-label">Vencidas</span>
+              <span class="kpi-value" id="k-vencidas">—</span>
+            </div>
+          </div>
+          <div class="kpi-card" data-color="green">
+            <div class="kpi-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <div class="kpi-info">
+              <span class="kpi-label">Concluídos</span>
+              <span class="kpi-value" id="k-concluidos">—</span>
+            </div>
+          </div>
+          <div class="kpi-card" data-color="purple">
+            <div class="kpi-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            </div>
+            <div class="kpi-info">
+              <span class="kpi-label">% Aprovação</span>
+              <span class="kpi-value" id="k-aprovacao">—</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="charts-row">
+          <div class="chart-card">
+            <h3>Por Setor</h3>
+            <div id="chart-setor" class="chart-area"></div>
+          </div>
+          <div class="chart-card">
+            <h3>Por Líder</h3>
+            <div id="chart-lider" class="chart-area"></div>
+          </div>
+        </div>
+
+        <div class="alerts-section">
+          <h3>⚠️ Alertas</h3>
+          <div id="alerts-list" class="alerts-list"></div>
+        </div>
+      </section>
+
+      <!-- COLABORADORES -->
+      <section id="page-colaboradores" class="page">
+        <div class="page-header">
+          <h2>Colaboradores</h2>
+          <button class="btn-primary" onclick="abrirModalColaborador()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Novo Colaborador
+          </button>
+        </div>
+
+        <div class="filters-row">
+          <input type="text" class="search-input" id="busca-colaborador" placeholder="Buscar por nome, setor ou cargo..." oninput="filtrarColaboradores()" />
+          <select class="filter-select" id="filtro-status" onchange="filtrarColaboradores()">
+            <option value="">Todos os status</option>
+            <option value="EM DIA">Em dia</option>
+            <option value="PRÓXIMO DO VENCIMENTO">Próximo do vencimento</option>
+            <option value="ATRASADO">Atrasado</option>
+            <option value="CONCLUÍDO">Concluído</option>
+          </select>
+          <select class="filter-select" id="filtro-empresa" onchange="filtrarColaboradores()">
+            <option value="">Todas as empresas</option>
+          </select>
+        </div>
+
+        <div class="table-wrap">
+          <table class="data-table" id="tabela-colaboradores">
+            <thead>
+              <tr>
+                <th onclick="ordenarTabela('nome')">Nome <span class="sort-icon">↕</span></th>
+                <th onclick="ordenarTabela('setor')">Setor <span class="sort-icon">↕</span></th>
+                <th>Cargo</th>
+                <th>Líder</th>
+                <th>Empresa</th>
+                <th onclick="ordenarTabela('data_admissao')">Admissão <span class="sort-icon">↕</span></th>
+                <th>Próx. Avaliação</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-colaboradores">
+              <tr><td colspan="9" class="empty-row">Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination" id="pag-colaboradores"></div>
+      </section>
+
+      <!-- AVALIAÇÕES -->
+      <section id="page-avaliacoes" class="page">
+        <div class="page-header">
+          <h2>Controle de Avaliações</h2>
+          <div class="header-badges">
+            <span class="badge badge-red" id="badge-atrasadas">0 atrasadas</span>
+            <span class="badge badge-amber" id="badge-proximas">0 próximas</span>
+          </div>
+        </div>
+
+        <div class="filters-row">
+          <input type="text" class="search-input" id="busca-aval" placeholder="Buscar colaborador..." oninput="filtrarAvaliacoes()" />
+          <select class="filter-select" id="filtro-aval-status" onchange="filtrarAvaliacoes()">
+            <option value="">Todos os status</option>
+            <option value="ATRASADO">Atrasado</option>
+            <option value="PRÓXIMO DO VENCIMENTO">Próximo do vencimento</option>
+            <option value="EM DIA">Em dia</option>
+            <option value="CONCLUÍDO">Concluído</option>
+          </select>
+          <select class="filter-select" id="filtro-aval-lider" onchange="filtrarAvaliacoes()">
+            <option value="">Todos os líderes</option>
+          </select>
+        </div>
+
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Colaborador</th>
+                <th>Setor</th>
+                <th>Líder</th>
+                <th>1ª Avaliação</th>
+                <th>2ª Avaliação</th>
+                <th>3ª Avaliação</th>
+                <th>Status</th>
+                <th>Ação</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-avaliacoes">
+              <tr><td colspan="8" class="empty-row">Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination" id="pag-avaliacoes"></div>
+      </section>
+
+      <!-- IMPORTAÇÃO -->
+      <section id="page-importacao" class="page">
+        <div class="page-header">
+          <h2>Importar Planilha Excel</h2>
+        </div>
+        <div class="import-container">
+          <div class="import-drop" id="import-drop" onclick="document.getElementById('file-input').click()" ondragover="dragOver(event)" ondrop="dropFile(event)">
+            <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2"><path d="M32 4v36M20 20l12-16 12 16"/><rect x="8" y="44" width="48" height="16" rx="2"/><path d="M20 52h24"/></svg>
+            <p>Arraste o arquivo <strong>.xlsx / .xls</strong> aqui</p>
+            <span>ou clique para selecionar</span>
+            <input type="file" id="file-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="processarArquivo(event)" />
+          </div>
+
+          <div id="import-preview" class="import-preview hidden">
+            <div class="import-info">
+              <span id="import-filename"></span>
+              <span id="import-count"></span>
+            </div>
+            <div class="table-wrap">
+              <table class="data-table" id="tabela-preview">
+                <thead>
+                  <tr>
+                    <th>Nome</th><th>Setor</th><th>Cargo</th>
+                    <th>Líder</th><th>Empresa</th><th>Admissão</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-preview"></tbody>
+              </table>
+            </div>
+            <div class="import-actions">
+              <button class="btn-secondary" onclick="cancelarImportacao()">Cancelar</button>
+              <button class="btn-primary" onclick="confirmarImportacao()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                Importar Dados
+              </button>
+            </div>
+          </div>
+
+          <div id="import-result" class="import-result hidden">
+            <h3>Resultado da Importação</h3>
+            <div class="result-grid">
+              <div class="result-item green"><span id="r-novos">0</span><label>Novos</label></div>
+              <div class="result-item blue"><span id="r-atualizados">0</span><label>Atualizados</label></div>
+              <div class="result-item amber"><span id="r-ignorados">0</span><label>Ignorados</label></div>
+              <div class="result-item red"><span id="r-erros">0</span><label>Erros</label></div>
+            </div>
+            <div id="import-log" class="import-log"></div>
+            <button class="btn-primary" onclick="novaImportacao()">Nova Importação</button>
+          </div>
+        </div>
+
+        <div class="import-guide">
+          <h3>📋 Formato Esperado da Planilha</h3>
+          <p>Colunas obrigatórias (em qualquer ordem):</p>
+          <div class="col-tags">
+            <span>nome</span><span>setor</span><span>cargo</span>
+            <span>lider_imediato</span><span>empresa</span><span>data_admissao</span>
+          </div>
+          <p>Colunas opcionais:</p>
+          <div class="col-tags secondary">
+            <span>data_primeira_avaliacao</span><span>data_segunda_avaliacao</span>
+            <span>data_terceira_avaliacao</span><span>status_primeira</span>
+            <span>status_segunda</span><span>status_terceira</span><span>situacao_final</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- RELATÓRIOS -->
+      <section id="page-relatorios" class="page">
+        <div class="page-header">
+          <h2>Relatórios</h2>
+        </div>
+        <div class="report-grid">
+          <div class="report-card" onclick="gerarRelatorio('por_setor')">
+            <div class="report-icon blue">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            </div>
+            <h3>Por Setor</h3>
+            <p>Colaboradores agrupados por setor</p>
+          </div>
+          <div class="report-card" onclick="gerarRelatorio('vencidas')">
+            <div class="report-icon red">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+            <h3>Avaliações Vencidas</h3>
+            <p>Colaboradores com avaliações atrasadas</p>
+          </div>
+          <div class="report-card" onclick="gerarRelatorio('pendentes')">
+            <div class="report-icon amber">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <h3>Pendentes</h3>
+            <p>Avaliações ainda não realizadas</p>
+          </div>
+          <div class="report-card" onclick="gerarRelatorio('aprovados')">
+            <div class="report-icon green">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <h3>Aprovados</h3>
+            <p>Colaboradores efetivados</p>
+          </div>
+          <div class="report-card" onclick="gerarRelatorio('reprovados')">
+            <div class="report-icon purple">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            </div>
+            <h3>Reprovados</h3>
+            <p>Colaboradores desligados</p>
+          </div>
+        </div>
+
+        <div id="report-result" class="hidden">
+          <div class="page-header">
+            <h3 id="report-title"></h3>
+            <div class="report-export-btns">
+              <button class="btn-secondary" onclick="exportarCSV()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Exportar CSV
+              </button>
+              <button class="btn-secondary" onclick="imprimirRelatorio()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                Imprimir
+              </button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table" id="tabela-relatorio">
+              <thead id="thead-relatorio"></thead>
+              <tbody id="tbody-relatorio"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- HISTÓRICO -->
+      <section id="page-historico" class="page">
+        <div class="page-header">
+          <h2>Histórico de Atividades</h2>
+          <input type="text" class="search-input" id="busca-historico" placeholder="Buscar no histórico..." oninput="filtrarHistorico()" style="max-width:280px" />
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Data/Hora</th>
+                <th>Colaborador</th>
+                <th>Ação</th>
+                <th>Usuário</th>
+                <th>Detalhes</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-historico">
+              <tr><td colspan="5" class="empty-row">Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination" id="pag-historico"></div>
+      </section>
+
+    </div><!-- /page-content -->
+  </main>
+</div>
+
+<!-- ═══════════════ MODAL COLABORADOR ═══════════════ -->
+<div id="modal-colaborador" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-colab-title">Novo Colaborador</h3>
+      <button class="modal-close" onclick="fecharModalColaborador()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="colab-id" />
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nome Completo *</label>
+          <input type="text" id="colab-nome" placeholder="Nome do colaborador" />
+        </div>
+        <div class="form-group">
+          <label>Data de Admissão *</label>
+          <input type="date" id="colab-admissao" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Setor *</label>
+          <input type="text" id="colab-setor" placeholder="Ex: Recursos Humanos" />
+        </div>
+        <div class="form-group">
+          <label>Cargo *</label>
+          <input type="text" id="colab-cargo" placeholder="Ex: Analista de RH" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Líder Imediato *</label>
+          <input type="text" id="colab-lider" placeholder="Nome do líder" />
+        </div>
+        <div class="form-group">
+          <label>Empresa *</label>
+          <select id="colab-empresa">
+            <option value="">Selecione</option>
+            <option>Caruaru Shopping</option>
+            <option>WA Hotel</option>
+            <option>WS Park</option>
+            <option>Corporate</option>
+          </select>
+        </div>
+      </div>
+      <div class="datas-preview" id="datas-preview"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="fecharModalColaborador()">Cancelar</button>
+      <button class="btn-primary" onclick="salvarColaborador()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Salvar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ MODAL AVALIAÇÃO ═══════════════ -->
+<div id="modal-avaliacao" class="modal-overlay hidden">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <div>
+        <h3 id="modal-aval-title">Realizar Avaliação</h3>
+        <p id="modal-aval-sub" style="font-size:0.85rem;color:var(--muted);margin-top:2px"></p>
+      </div>
+      <button class="modal-close" onclick="fecharModalAvaliacao()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="aval-id-colaborador" />
+      <input type="hidden" id="aval-tipo" />
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Data da Avaliação</label>
+          <input type="date" id="aval-data" />
+        </div>
+        <div class="form-group">
+          <label>Avaliador</label>
+          <input type="text" id="aval-avaliador" />
+        </div>
+      </div>
+
+      <div class="criterios-grid" id="criterios-grid"></div>
+
+      <div class="aval-resultado" id="aval-resultado">
+        <div class="resultado-item">
+          <label>Média</label>
+          <span id="media-geral">—</span>
+        </div>
+        <div class="resultado-item">
+          <label>Percentual</label>
+          <span id="pct-geral">—</span>
+        </div>
+        <div class="resultado-item">
+          <label>Resultado</label>
+          <span id="resultado-final" class="badge">—</span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="fecharModalAvaliacao()">Cancelar</button>
+      <button class="btn-primary" onclick="confirmarAvaliacao()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/></svg>
+        Confirmar Avaliação
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast-container" class="toast-container"></div>
+
+<!-- LOADING -->
+<div id="loading" class="loading-overlay hidden">
+  <div class="loading-spinner"></div>
+</div>
+
+<script src="js/app.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/colaboradores.js"></script>
+<script src="js/avaliacoes.js"></script>
+<script src="js/importacao.js"></script>
+</body>
+</html>

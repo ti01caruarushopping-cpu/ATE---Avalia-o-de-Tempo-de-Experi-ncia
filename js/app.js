@@ -1,0 +1,312 @@
+// ============================================================
+// ATE — app.js  |  Core: auth, routing, API, utilities
+// ============================================================
+
+// ── CONFIG ── Substitua pela URL do seu Web App publicado
+const API_URL = "https://script.google.com/macros/s/AKfycbzTKS3iy298Ck2RGX687jd-rGs6a3d97Z5furD8lC5HhytRaE1DWSCJ9DbY5ToeLFpq/exec";
+
+// ── ESTADO GLOBAL ──
+const ATE = {
+  usuario: null,
+  perfil: null,
+  nome: null,
+  colaboradores: [],
+  sortDir: {},
+  paginas: {},
+  relatorioAtual: null,
+  importDados: []
+};
+
+const POR_PAGINA = 15;
+
+// ============================================================
+// API
+// ============================================================
+async function api(action, data = {}) {
+  try {
+    mostrarLoading(true);
+    const resp = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify({ action, data: { ...data, usuario: ATE.usuario, perfil: ATE.perfil, nome: ATE.nome } })
+    });
+    const json = await resp.json();
+    return json;
+  } catch (err) {
+    console.error("API Error:", err);
+    toast("Erro de comunicação com o servidor", "error");
+    return { ok: false, msg: err.message };
+  } finally {
+    mostrarLoading(false);
+  }
+}
+
+// ============================================================
+// AUTH
+// ============================================================
+async function fazerLogin() {
+  const usuario = document.getElementById("login-usuario").value.trim();
+  const senha   = document.getElementById("login-senha").value;
+  const erroEl  = document.getElementById("login-erro");
+  const btnTxt  = document.getElementById("login-txt");
+
+  if (!usuario || !senha) {
+    erroEl.textContent = "Preencha usuário e senha.";
+    erroEl.classList.remove("hidden");
+    return;
+  }
+
+  erroEl.classList.add("hidden");
+  btnTxt.textContent = "Entrando...";
+
+  // MODO DEMO (sem backend configurado)
+  if (API_URL.includes("SEU_DEPLOYMENT_ID")) {
+    iniciarSessaoDemo(usuario, senha);
+    btnTxt.textContent = "Entrar";
+    return;
+  }
+
+  const res = await api("login", { usuario, senha });
+  btnTxt.textContent = "Entrar";
+
+  if (res.ok) {
+    iniciarSessao(res);
+  } else {
+    erroEl.textContent = res.msg || "Credenciais inválidas.";
+    erroEl.classList.remove("hidden");
+  }
+}
+
+function iniciarSessaoDemo(usuario, senha) {
+  const usuarios = {
+    "admin":  { perfil: "administrador", nome: "Administrador RH",  senha: "admin2026" },
+    "gestor": { perfil: "gestor",        nome: "Gestor Padrão",     senha: "gestor2026" }
+  };
+  const u = usuarios[usuario];
+  if (u && u.senha === senha) {
+    iniciarSessao({ ok: true, perfil: u.perfil, nome: u.nome, usuario });
+  } else {
+    const el = document.getElementById("login-erro");
+    el.textContent = "Usuário ou senha inválidos.";
+    el.classList.remove("hidden");
+  }
+}
+
+function iniciarSessao(res) {
+  ATE.usuario = res.usuario;
+  ATE.perfil  = res.perfil;
+  ATE.nome    = res.nome;
+
+  document.getElementById("login-screen").classList.add("hidden");
+  document.getElementById("app").classList.remove("hidden");
+  document.getElementById("sidebar-nome").textContent   = res.nome;
+  document.getElementById("sidebar-perfil").textContent = res.perfil;
+  document.getElementById("sidebar-avatar").textContent = res.nome.charAt(0).toUpperCase();
+
+  // Ocultar menus de admin para gestor
+  if (res.perfil === "gestor") {
+    document.querySelector('[data-page="importacao"]')?.classList.add("hidden");
+  }
+
+  navigateTo("dashboard");
+}
+
+function fazerLogout() {
+  ATE.usuario = null; ATE.perfil = null; ATE.nome = null;
+  ATE.colaboradores = [];
+  document.getElementById("app").classList.add("hidden");
+  document.getElementById("login-screen").classList.remove("hidden");
+  document.getElementById("login-senha").value = "";
+}
+
+function toggleSenha() {
+  const input = document.getElementById("login-senha");
+  input.type = input.type === "password" ? "text" : "password";
+}
+
+// ============================================================
+// NAVEGAÇÃO
+// ============================================================
+const PAGE_TITLES = {
+  dashboard: "Dashboard",
+  colaboradores: "Colaboradores",
+  avaliacoes: "Avaliações",
+  importacao: "Importação",
+  relatorios: "Relatórios",
+  historico: "Histórico"
+};
+
+function navigateTo(page) {
+  // Atualizar nav
+  document.querySelectorAll(".nav-item").forEach(n => {
+    n.classList.toggle("active", n.dataset.page === page);
+  });
+
+  // Trocar página
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  document.getElementById(`page-${page}`)?.classList.add("active");
+  document.getElementById("topbar-title").textContent = PAGE_TITLES[page] || page;
+
+  // Fechar sidebar mobile
+  if (window.innerWidth <= 768) document.getElementById("sidebar").classList.remove("open");
+
+  // Carregar dados da página
+  switch (page) {
+    case "dashboard":     carregarDashboard(); break;
+    case "colaboradores": carregarColaboradores(); break;
+    case "avaliacoes":    carregarAvaliacoes(); break;
+    case "historico":     carregarHistorico(); break;
+  }
+}
+
+function toggleSidebar() {
+  document.getElementById("sidebar").classList.toggle("open");
+}
+
+// ============================================================
+// TOASTS
+// ============================================================
+const TOAST_ICONS = {
+  success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+  error:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+  info:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+  warning: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
+};
+
+function toast(msg, type = "info") {
+  const el = document.createElement("div");
+  el.className = `toast ${type}`;
+  el.innerHTML = `${TOAST_ICONS[type] || ""}<span>${msg}</span>`;
+  document.getElementById("toast-container").appendChild(el);
+  setTimeout(() => el.remove(), 4200);
+}
+
+// ============================================================
+// LOADING
+// ============================================================
+function mostrarLoading(show) {
+  document.getElementById("loading").classList.toggle("hidden", !show);
+}
+
+// ============================================================
+// UTILITÁRIOS DE DATA
+// ============================================================
+function formatarData(str) {
+  if (!str) return "—";
+  if (str.includes("/")) return str;
+  const d = new Date(str + "T00:00:00");
+  return d.toLocaleDateString("pt-BR");
+}
+
+function dataParaInput(str) {
+  if (!str) return "";
+  if (str.includes("-")) return str;
+  const [d, m, y] = str.split("/");
+  return `${y}-${m}-${d}`;
+}
+
+function inputParaData(str) {
+  if (!str) return "";
+  const [y, m, d] = str.split("-");
+  return `${d}/${m}/${y}`;
+}
+
+function calcularDatasAvaliacao(admissao) {
+  const base = new Date(admissao + "T00:00:00");
+  const add = (dias) => {
+    const d = new Date(base); d.setDate(d.getDate() + dias);
+    return d.toLocaleDateString("pt-BR");
+  };
+  return { p1: add(30), p2: add(60), p3: add(80) };
+}
+
+function statusBadgeHtml(status) {
+  const map = {
+    "EM DIA":                { cls: "badge-green",  label: "Em dia" },
+    "PRÓXIMO DO VENCIMENTO": { cls: "badge-amber",  label: "Próximo" },
+    "ATRASADO":              { cls: "badge-red",    label: "Atrasado" },
+    "CONCLUÍDO":             { cls: "badge-blue",   label: "Concluído" },
+    "PENDENTE":              { cls: "badge-gray",   label: "Pendente" },
+    "REALIZADA":             { cls: "badge-green",  label: "Realizada" },
+    "EM EXPERIÊNCIA":        { cls: "badge-blue",   label: "Em experiência" },
+    "EFETIVADO":             { cls: "badge-green",  label: "Efetivado" },
+    "DESLIGADO":             { cls: "badge-red",    label: "Desligado" },
+    "APROVADO":              { cls: "badge-green",  label: "Aprovado" },
+    "REPROVADO":             { cls: "badge-red",    label: "Reprovado" }
+  };
+  const m = map[status] || { cls: "badge-gray", label: status || "—" };
+  return `<span class="badge ${m.cls}">${m.label}</span>`;
+}
+
+// ============================================================
+// PAGINAÇÃO GENÉRICA
+// ============================================================
+function renderPaginacao(containerEl, total, paginaAtual, chave, callback) {
+  const totalPags = Math.ceil(total / POR_PAGINA);
+  if (totalPags <= 1) { containerEl.innerHTML = ""; return; }
+
+  let html = `<button class="pag-btn" onclick="${callback}(${paginaAtual - 1})" ${paginaAtual <= 1 ? "disabled" : ""}>‹</button>`;
+  for (let i = 1; i <= totalPags; i++) {
+    if (i === 1 || i === totalPags || Math.abs(i - paginaAtual) <= 1) {
+      html += `<button class="pag-btn ${i === paginaAtual ? "active" : ""}" onclick="${callback}(${i})">${i}</button>`;
+    } else if (Math.abs(i - paginaAtual) === 2) {
+      html += `<span style="padding:0 4px;color:var(--muted)">…</span>`;
+    }
+  }
+  html += `<button class="pag-btn" onclick="${callback}(${paginaAtual + 1})" ${paginaAtual >= totalPags ? "disabled" : ""}>›</button>`;
+  containerEl.innerHTML = html;
+}
+
+// ============================================================
+// ORDENAÇÃO
+// ============================================================
+function ordenarPor(arr, campo) {
+  ATE.sortDir[campo] = ATE.sortDir[campo] === "asc" ? "desc" : "asc";
+  const dir = ATE.sortDir[campo] === "asc" ? 1 : -1;
+  return [...arr].sort((a, b) => {
+    const va = (a[campo] || "").toString().toLowerCase();
+    const vb = (b[campo] || "").toString().toLowerCase();
+    return va < vb ? -dir : va > vb ? dir : 0;
+  });
+}
+
+// ============================================================
+// EXPORTAR CSV
+// ============================================================
+function exportarCSV() {
+  if (!ATE.relatorioAtual || !ATE.relatorioAtual.length) {
+    toast("Nenhum dado para exportar", "warning"); return;
+  }
+
+  const cols = Object.keys(ATE.relatorioAtual[0]);
+  const linhas = [cols.join(";")];
+  ATE.relatorioAtual.forEach(r => linhas.push(cols.map(c => `"${(r[c] || "").toString().replace(/"/g, '""')}"`).join(";")));
+
+  const blob = new Blob(["\ufeff" + linhas.join("\n")], { type: "text/csv;charset=utf-8" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href = url; a.download = `ATE_relatorio_${Date.now()}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+  toast("CSV exportado!", "success");
+}
+
+function imprimirRelatorio() { window.print(); }
+
+// ============================================================
+// KEYBOARD SHORTCUTS
+// ============================================================
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && document.getElementById("login-screen") && !document.getElementById("login-screen").classList.contains("hidden")) {
+    fazerLogin();
+  }
+  if (e.key === "Escape") {
+    document.querySelectorAll(".modal-overlay:not(.hidden)").forEach(m => m.classList.add("hidden"));
+  }
+});
+
+// Fechar modal ao clicar fora
+document.querySelectorAll(".modal-overlay").forEach(overlay => {
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) overlay.classList.add("hidden");
+  });
+});
