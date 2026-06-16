@@ -296,9 +296,6 @@ function imprimirRelatorio() { window.print(); }
 // KEYBOARD SHORTCUTS
 // ============================================================
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && document.getElementById("login-screen") && !document.getElementById("login-screen").classList.contains("hidden")) {
-    fazerLogin();
-  }
   if (e.key === "Escape") {
     document.querySelectorAll(".modal-overlay:not(.hidden)").forEach(m => m.classList.add("hidden"));
   }
