@@ -63,7 +63,19 @@ async function api(action, data = {}) {
     mostrarLoading(false);
   }
 }
-
+// ============================================================
+// INTERCEPTADOR DO FORMULÁRIO DE LOGIN (ADICIONAR NO APP.JS)
+// ============================================================
+document.addEventListener("DOMContentLoaded", () => {
+  const formLogin = document.getElementById("form-login");
+  
+  if (formLogin) {
+    formLogin.addEventListener("submit", async (e) => {
+      e.preventDefault(); // Impede o HTML de atualizar a página ou perder os dados dos inputs
+      await fazerLogin(); // Executa o login com os dados capturados com segurança
+    });
+  }
+});
 // ============================================================
 // AUTH
 // ============================================================
