@@ -26,12 +26,19 @@ async function api(action, data = {}) {
   try {
     mostrarLoading(true);
 
+    // CORREÇÃO: Se for login, envia apenas os dados digitados. 
+    // Se forem outras ações, mescla os dados do usuário logado vindo ANTES do ...data
+    const dadosFinais = action === "login" 
+      ? data 
+      : { usuario: ATE.usuario, perfil: ATE.perfil, nome: ATE.nome, ...data };
+
     const payload = JSON.stringify({
       action,
-      data: { ...data, usuario: ATE.usuario, perfil: ATE.perfil, nome: ATE.nome }
+      data: dadosFinais
     });
 
-    console.log(`[ATE] → ${action}`, data);
+    const url = `${API_URL}?payload=${encodeURIComponent(payload)}`;
+    console.log(`[ATE] → ${action}`, dadosFinais);
 
     // Mudando para POST: Os dados vão encapsulados no body de forma limpa e segura
     const resp = await fetch(API_URL, { 
