@@ -106,6 +106,34 @@ function _tipoAvaliacao(c) {
 }
 
 // ──────────────────────────────────────────────
+// LISTAS DINÂMICAS — Setor e Líder Imediato
+// Extraídas dos colaboradores já cadastrados, para popular os <select>
+// ──────────────────────────────────────────────
+function _listaSetoresUnicos() {
+  return [...new Set(ATE.colaboradores.map(c => (c.setor || "").trim()).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, "pt-BR"));
+}
+
+function _listaLideresUnicos() {
+  return [...new Set(ATE.colaboradores.map(c => (c.lider_imediato || "").trim()).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, "pt-BR"));
+}
+
+function _popularSelectColab(selectEl, lista, valorAtual) {
+  const opcoesExtras = valorAtual && !lista.includes(valorAtual) ? [valorAtual] : [];
+  const todasOpcoes = [...lista, ...opcoesExtras];
+  selectEl.innerHTML = `<option value="">Selecione</option>` +
+    todasOpcoes.map(v => `<option value="${v.replace(/"/g,'&quot;')}" ${v === valorAtual ? "selected" : ""}>${v}</option>`).join("");
+}
+
+function _popularListasColaborador(valorSetorAtual = "", valorLiderAtual = "") {
+  const selSetor = document.getElementById("colab-setor");
+  const selLider = document.getElementById("colab-lider");
+  _popularSelectColab(selSetor, _listaSetoresUnicos(), valorSetorAtual);
+  _popularSelectColab(selLider, _listaLideresUnicos(), valorLiderAtual);
+}
+
+// ──────────────────────────────────────────────
 // MODAL COLABORADOR
 // ──────────────────────────────────────────────
 function abrirModalColaborador(id = null) {
@@ -115,9 +143,6 @@ function abrirModalColaborador(id = null) {
   document.getElementById("colab-id").value        = "";
   document.getElementById("colab-nome").value      = "";
   document.getElementById("colab-admissao").value  = "";
-  document.getElementById("colab-setor").value     = "";
-  document.getElementById("colab-cargo").value     = "";
-  document.getElementById("colab-lider").value     = "";
   document.getElementById("colab-empresa").value   = "";
   document.getElementById("datas-preview").innerHTML = "";
 
@@ -128,13 +153,12 @@ function abrirModalColaborador(id = null) {
     document.getElementById("colab-id").value       = c.id;
     document.getElementById("colab-nome").value     = c.nome;
     document.getElementById("colab-admissao").value = dataParaInput(c.data_admissao);
-    document.getElementById("colab-setor").value    = c.setor;
-    document.getElementById("colab-cargo").value    = c.cargo;
-    document.getElementById("colab-lider").value    = c.lider_imediato;
     document.getElementById("colab-empresa").value  = c.empresa;
+    _popularListasColaborador(c.setor, c.lider_imediato);
     atualizarDatasPreview();
   } else {
     title.textContent = "Novo Colaborador";
+    _popularListasColaborador("", "");
   }
 
   modal.classList.remove("hidden");
@@ -164,9 +188,9 @@ async function salvarColaborador() {
   const id      = document.getElementById("colab-id").value;
   const nome    = document.getElementById("colab-nome").value.trim();
   const admissao = document.getElementById("colab-admissao").value;
-  const setor   = document.getElementById("colab-setor").value.trim();
+  const setor   = document.getElementById("colab-setor").value;
   const cargo   = document.getElementById("colab-cargo").value.trim();
-  const lider   = document.getElementById("colab-lider").value.trim();
+  const lider   = document.getElementById("colab-lider").value;
   const empresa = document.getElementById("colab-empresa").value;
 
   if (!nome || !admissao || !setor || !cargo || !lider || !empresa) {
@@ -203,70 +227,4 @@ function verHistoricoColab(id) {
     document.getElementById("busca-historico").value = id;
     filtrarHistorico();
   }, 100);
-}
-
-// ── DADOS DEMO ──
-function _demoColaboradores() {
-  const hoje = new Date();
-  const addDias = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x.toLocaleDateString("pt-BR"); };
-
-  const base = [
-    { nome: "Ana Beatriz Silva",    setor: "Administrativo", cargo: "Assistente Adm.",  lider_imediato: "Karenina",  empresa: "Caruaru Shopping", diasAtras: 45 },
-    { nome: "Carlos Eduardo Lima",  setor: "Operações",      cargo: "Operador",          lider_imediato: "Crispim",   empresa: "WS Park",          diasAtras: 20 },
-    { nome: "Maria Fernanda Costa", setor: "RH",             cargo: "Analista de RH",    lider_imediato: "Thaisa",    empresa: "Caruaru Shopping", diasAtras: 70 },
-    { nome: "João Paulo Souza",     setor: "TI",             cargo: "Suporte TI",        lider_imediato: "Davydson",  empresa: "Caruaru Shopping", diasAtras: 10 },
-    { nome: "Letícia Oliveira",     setor: "Financeiro",     cargo: "Aux. Financeiro",   lider_imediato: "Eduardo",   empresa: "WA Hotel",         diasAtras: 35 },
-    { nome: "Rafael Santos",        setor: "Operações",      cargo: "Supervisor",        lider_imediato: "Crispim",   empresa: "WS Park",          diasAtras: 85 },
-    { nome: "Juliana Alves",        setor: "Administrativo", cargo: "Recepcionista",     lider_imediato: "Karenina",  empresa: "WA Hotel",         diasAtras: 5  },
-    { nome: "Pedro Henrique Ramos", setor: "TI",             cargo: "Dev. Junior",       lider_imediato: "Davydson",  empresa: "Caruaru Shopping", diasAtras: 60 },
-  ];
-
-  return base.map((b, i) => {
-    const admissao = new Date(); admissao.setDate(admissao.getDate() - b.diasAtras);
-    const admStr   = admissao.toLocaleDateString("pt-BR");
-    const p1 = addDias(admissao, 30), p2 = addDias(admissao, 60), p3 = addDias(admissao, 80);
-
-    const s1 = b.diasAtras >= 30 ? "REALIZADA" : "PENDENTE";
-    const s2 = b.diasAtras >= 60 ? "REALIZADA" : "PENDENTE";
-    const s3 = b.diasAtras >= 80 ? "REALIZADA" : "PENDENTE";
-
-    let proxData = null, statusAtual = "CONCLUÍDO";
-    if (s1 !== "REALIZADA") { proxData = p1; }
-    else if (s2 !== "REALIZADA") { proxData = p2; }
-    else if (s3 !== "REALIZADA") { proxData = p3; }
-
-    if (proxData) {
-      const [dd, mm, yy] = proxData.split("/");
-      const diff = Math.floor((new Date(yy, mm-1, dd) - new Date()) / 86400000);
-      statusAtual = diff < 0 ? "ATRASADO" : diff <= 7 ? "PRÓXIMO DO VENCIMENTO" : "EM DIA";
-    }
-
-    return {
-      id: `demo-${i}`, nome: b.nome, setor: b.setor, cargo: b.cargo,
-      lider_imediato: b.lider_imediato, empresa: b.empresa,
-      data_admissao: admStr,
-      data_primeira_avaliacao: p1, data_segunda_avaliacao: p2, data_terceira_avaliacao: p3,
-      status_primeira: s1, status_segunda: s2, status_terceira: s3,
-      situacao_final: s3 === "REALIZADA" ? "EFETIVADO" : "EM EXPERIÊNCIA",
-      proxima_avaliacao: proxData, status_atual: statusAtual
-    };
-  });
-}
-
-function _demoSalvarColab(id, payload) {
-  const datas = calcularDatasAvaliacao(dataParaInput(payload.data_admissao));
-  if (id) {
-    const idx = ATE.colaboradores.findIndex(c => c.id === id);
-    if (idx >= 0) Object.assign(ATE.colaboradores[idx], { ...payload,
-      data_primeira_avaliacao: datas.p1, data_segunda_avaliacao: datas.p2, data_terceira_avaliacao: datas.p3
-    });
-  } else {
-    ATE.colaboradores.unshift({
-      id: `demo-${Date.now()}`, ...payload,
-      data_primeira_avaliacao: datas.p1, data_segunda_avaliacao: datas.p2, data_terceira_avaliacao: datas.p3,
-      status_primeira: "PENDENTE", status_segunda: "PENDENTE", status_terceira: "PENDENTE",
-      situacao_final: "EM EXPERIÊNCIA", status_atual: "EM DIA", proxima_avaliacao: datas.p1
-    });
-  }
-  _renderColaboradores();
 }

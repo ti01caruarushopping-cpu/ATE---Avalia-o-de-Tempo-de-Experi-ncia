@@ -267,7 +267,7 @@
             <option value="EM DIA">Em dia</option>
             <option value="CONCLUÍDO">Concluído</option>
           </select>
-          <select class="filter-select" id="filtro-aval-lider" onchange="filtrarAvaliacoes()">
+          <select class="filter-select" id="filtro-aval-lider">
             <option value="">Todos os líderes</option>
           </select>
         </div>
@@ -480,7 +480,9 @@
       <div class="form-row">
         <div class="form-group">
           <label>Setor *</label>
-          <input type="text" id="colab-setor" placeholder="Ex: Recursos Humanos" />
+          <select id="colab-setor">
+            <option value="">Selecione</option>
+          </select>
         </div>
         <div class="form-group">
           <label>Cargo *</label>
@@ -490,7 +492,9 @@
       <div class="form-row">
         <div class="form-group">
           <label>Líder Imediato *</label>
-          <input type="text" id="colab-lider" placeholder="Nome do líder" />
+          <select id="colab-lider">
+            <option value="">Selecione</option>
+          </select>
         </div>
         <div class="form-group">
           <label>Empresa *</label>
@@ -515,12 +519,12 @@
   </div>
 </div>
 
-<!-- ═══════════════ MODAL AVALIAÇÃO ═══════════════ -->
+<!-- ═══════════════ MODAL AVALIAÇÃO (SIMPLIFICADO) ═══════════════ -->
 <div id="modal-avaliacao" class="modal-overlay hidden">
-  <div class="modal modal-lg">
+  <div class="modal">
     <div class="modal-header">
       <div>
-        <h3 id="modal-aval-title">Realizar Avaliação</h3>
+        <h3 id="modal-aval-title">Registrar Avaliação</h3>
         <p id="modal-aval-sub" style="font-size:0.85rem;color:var(--muted);margin-top:2px"></p>
       </div>
       <button class="modal-close" onclick="fecharModalAvaliacao()">
@@ -533,29 +537,33 @@
 
       <div class="form-row">
         <div class="form-group">
-          <label>Data da Avaliação</label>
+          <label>Data da Avaliação *</label>
           <input type="date" id="aval-data" />
         </div>
         <div class="form-group">
-          <label>Avaliador</label>
-          <input type="text" id="aval-avaliador" />
+          <label>Avaliador (Gestor) *</label>
+          <input type="text" id="aval-avaliador" placeholder="Nome do gestor responsável" />
         </div>
       </div>
 
-      <div class="criterios-grid" id="criterios-grid"></div>
-
-      <div class="aval-resultado" id="aval-resultado">
-        <div class="resultado-item">
-          <label>Média</label>
-          <span id="media-geral">—</span>
-        </div>
-        <div class="resultado-item">
-          <label>Percentual</label>
-          <span id="pct-geral">—</span>
-        </div>
-        <div class="resultado-item">
+      <div class="form-row">
+        <div class="form-group">
           <label>Resultado</label>
-          <span id="resultado-final" class="badge">—</span>
+          <select id="aval-resultado-select">
+            <option value="APROVADO">Positivo</option>
+            <option value="REPROVADO">Negativo</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Lançado por (RH) *</label>
+          <input type="text" id="aval-lancador" placeholder="Seu nome" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Observação (opcional)</label>
+          <input type="text" id="aval-observacao" placeholder="Observações sobre a avaliação" />
         </div>
       </div>
     </div>

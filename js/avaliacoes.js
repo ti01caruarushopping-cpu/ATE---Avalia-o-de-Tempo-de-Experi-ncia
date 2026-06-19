@@ -2,18 +2,8 @@
 // ATE — avaliacoes.js  |  Controle e formulário de avaliações
 // ============================================================
 
-const CRITERIOS = [
-  "Assiduidade", "Pontualidade", "Relacionamento Interpessoal",
-  "Comprometimento", "Produtividade", "Organização",
-  "Conhecimento Técnico", "Postura Profissional",
-  "Trabalho em Equipe", "Comunicação"
-];
-
-const NOTAS_LABEL = { 1: "Insatisfatório", 2: "Regular", 3: "Satisfatório", 4: "Excelente" };
-
 let _avalFiltrados = [];
 let _avalPagina = 1;
-let _notasAtuais = {};
 
 // ──────────────────────────────────────────────
 // TABELA DE CONTROLE
@@ -44,8 +34,8 @@ function _aplicarFiltroAvaliacoes() {
   }
 
   _avalFiltrados = ATE.colaboradores.filter(c => {
-    const matchBusca = !busca || c.nome?.toLowerCase().includes(busca);
-    const matchLider = !lider || c.lider_imediato === lider;
+    const matchBusca  = !busca  || c.nome?.toLowerCase().includes(busca);
+    const matchLider  = !lider  || c.lider_imediato === lider;
     const matchStatus = !status || c.status_atual === status;
     return matchBusca && matchLider && matchStatus;
   });
@@ -86,7 +76,7 @@ function _renderTabelaAvaliacoes() {
         ${tipo ? `
         <button class="btn-primary" style="padding:6px 12px;font-size:.78rem" onclick="abrirModalAvaliacao('${c.id}','${tipo}')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M9 11l3 3L22 4"/></svg>
-          Avaliar
+          Registrar
         </button>` : `<span class="badge badge-blue">Concluído</span>`}
       </td>
     </tr>`;
@@ -118,7 +108,7 @@ function _tipoProximo(c) {
 }
 
 // ──────────────────────────────────────────────
-// MODAL DE AVALIAÇÃO
+// MODAL DE AVALIAÇÃO — Simplificado (sem critérios/notas)
 // ──────────────────────────────────────────────
 function abrirModalAvaliacao(idColab, tipo) {
   if (!tipo) { toast("Todas as avaliações já foram realizadas.", "info"); return; }
@@ -126,109 +116,72 @@ function abrirModalAvaliacao(idColab, tipo) {
   const colab = ATE.colaboradores.find(c => c.id === idColab);
   if (!colab) return;
 
-  _notasAtuais = {};
-
   document.getElementById("aval-id-colaborador").value = idColab;
   document.getElementById("aval-tipo").value           = tipo;
   document.getElementById("modal-aval-title").textContent = `${tipo} — ${colab.nome}`;
-  document.getElementById("modal-aval-sub").textContent   = `${colab.setor} · ${colab.cargo} · Líder: ${colab.lider_imediato}`;
+  document.getElementById("modal-aval-sub").textContent   =
+    `${colab.setor} · ${colab.cargo} · Líder: ${colab.lider_imediato}`;
 
   // Data padrão = hoje
   const hoje = new Date();
-  document.getElementById("aval-data").value = hoje.toISOString().split("T")[0];
-  document.getElementById("aval-avaliador").value = ATE.nome || ATE.usuario;
+  document.getElementById("aval-data").value       = hoje.toISOString().split("T")[0];
+  document.getElementById("aval-avaliador").value  = "";
+  document.getElementById("aval-lancador").value   = ATE.nome || ATE.usuario;
 
-  // Renderizar critérios
-  const grid = document.getElementById("criterios-grid");
-  grid.innerHTML = CRITERIOS.map(c => `
-    <div class="criterio-row" id="cr-${_slug(c)}">
-      <span class="criterio-nome">${c}</span>
-      <div class="notas-row">
-        ${[1,2,3,4].map(n => `
-          <button type="button" class="nota-btn" data-criterio="${c}" data-nota="${n}"
-            title="${NOTAS_LABEL[n]}" onclick="selecionarNota(this,'${c}',${n})">
-            ${n}
-          </button>`).join("")}
-      </div>
-      <div class="criterio-obs">
-        <input type="text" placeholder="Observação (opcional)" id="obs-${_slug(c)}" />
-      </div>
-    </div>`).join("");
+  // Resultado simplificado: APROVADO por padrão (RH registra conforme avaliação do gestor)
+  document.getElementById("aval-resultado-select").value = "APROVADO";
 
-  _atualizarResultado();
+  // Observação em branco
+  document.getElementById("aval-observacao").value = "";
+
   document.getElementById("modal-avaliacao").classList.remove("hidden");
+  document.getElementById("aval-avaliador").focus();
 }
 
 function fecharModalAvaliacao() {
   document.getElementById("modal-avaliacao").classList.add("hidden");
 }
 
-function selecionarNota(btn, criterio, nota) {
-  // Deselect siblings
-  btn.closest(".notas-row").querySelectorAll(".nota-btn").forEach(b => b.classList.remove("selected"));
-  btn.classList.add("selected");
-  _notasAtuais[criterio] = nota;
-  _atualizarResultado();
-}
-
-function _atualizarResultado() {
-  const notas = Object.values(_notasAtuais);
-  if (!notas.length) {
-    document.getElementById("media-geral").textContent    = "—";
-    document.getElementById("pct-geral").textContent      = "—";
-    document.getElementById("resultado-final").textContent = "—";
-    document.getElementById("resultado-final").className  = "badge";
-    return;
-  }
-
-  const media = notas.reduce((a, b) => a + b, 0) / notas.length;
-  const pct   = Math.round((media / 4) * 100);
-  const result = media >= 3 ? "APROVADO" : "REPROVADO";
-
-  document.getElementById("media-geral").textContent     = media.toFixed(2);
-  document.getElementById("pct-geral").textContent       = `${pct}%`;
-  document.getElementById("resultado-final").textContent  = result;
-  document.getElementById("resultado-final").className   = `badge ${result === "APROVADO" ? "badge-green" : "badge-red"}`;
-}
-
 async function confirmarAvaliacao() {
-  // Validar: todos critérios com nota
-  const faltando = CRITERIOS.filter(c => !_notasAtuais[c]);
-  if (faltando.length) {
-    toast(`Avalie todos os critérios. Faltam: ${faltando.length}`, "warning");
-    // Destacar faltando
-    faltando.forEach(c => {
-      const row = document.getElementById(`cr-${_slug(c)}`);
-      if (row) { row.style.border = "2px solid var(--red)"; setTimeout(() => row.style.border = "", 2000); }
-    });
-    return;
+  const idColab    = document.getElementById("aval-id-colaborador").value;
+  const tipo       = document.getElementById("aval-tipo").value;
+  const data       = document.getElementById("aval-data").value;
+  const avaliador  = document.getElementById("aval-avaliador").value.trim();
+  const lancador   = document.getElementById("aval-lancador").value.trim();
+  const resultado  = document.getElementById("aval-resultado-select").value;
+  const observacao = document.getElementById("aval-observacao").value.trim();
+
+  if (!data) {
+    toast("Informe a data da avaliação.", "warning"); return;
+  }
+  if (!avaliador) {
+    toast("Informe o nome do avaliador (gestor).", "warning"); return;
   }
 
-  const idColab = document.getElementById("aval-id-colaborador").value;
-  const tipo    = document.getElementById("aval-tipo").value;
-  const data    = document.getElementById("aval-data").value;
-  const avaliador = document.getElementById("aval-avaliador").value;
-
-  const criterios = CRITERIOS.map(c => ({
-    criterio: c, nota: _notasAtuais[c],
-    observacao: document.getElementById(`obs-${_slug(c)}`)?.value || ""
-  }));
-
+  // Envia para o backend com um único critério sintético
   const res = await api("salvarAvaliacao", {
-    id_colaborador: idColab, tipo_avaliacao: tipo,
-    data_avaliacao: inputParaData(data), avaliador, criterios
+    id_colaborador: idColab,
+    tipo_avaliacao: tipo,
+    data_avaliacao: inputParaData(data),
+    avaliador,
+    lancador,
+    criterios: [{
+      criterio: "Avaliação Geral",
+      nota: resultado === "APROVADO" ? 4 : 1,
+      observacao: observacao || `Lançado por: ${lancador}`
+    }]
   });
 
   if (res.ok) {
     fecharModalAvaliacao();
-    toast(`Avaliação salva! Média: ${res.media} — ${res.resultado}`, "success");
+    toast(`Avaliação registrada com sucesso — ${resultado}`, "success");
     await carregarColaboradores();
   } else {
     toast(res.msg || "Erro ao salvar avaliação.", "error");
   }
 }
 
-// ── RELATÓRIOS (usado em relatorios.js mas definido aqui) ──
+// ── RELATÓRIOS ──
 async function gerarRelatorio(tipo) {
   const titles = {
     por_setor:  "Colaboradores por Setor",
@@ -266,17 +219,6 @@ function _flattenPorSetor(obj) {
   return Object.values(obj).flat();
 }
 
-function _filtrarRelatorioDemo(tipo) {
-  const c = ATE.colaboradores;
-  switch (tipo) {
-    case "vencidas":   return c.filter(x => x.status_atual === "ATRASADO");
-    case "pendentes":  return c.filter(x => ["EM DIA","PRÓXIMO DO VENCIMENTO"].includes(x.status_atual));
-    case "aprovados":  return c.filter(x => x.situacao_final === "EFETIVADO");
-    case "reprovados": return c.filter(x => x.situacao_final === "DESLIGADO");
-    default:           return c;
-  }
-}
-
 // ── HISTÓRICO ──
 let _histDados = [], _histPagina = 1;
 
@@ -289,7 +231,11 @@ async function carregarHistorico() {
 function filtrarHistorico() {
   const busca = (document.getElementById("busca-historico")?.value || "").toLowerCase();
   const filtrado = busca
-    ? _histDados.filter(h => h.acao?.toLowerCase().includes(busca) || h.detalhes?.toLowerCase().includes(busca) || h.id_colaborador?.includes(busca) || h.usuario?.toLowerCase().includes(busca))
+    ? _histDados.filter(h =>
+        h.acao?.toLowerCase().includes(busca) ||
+        h.detalhes?.toLowerCase().includes(busca) ||
+        h.id_colaborador?.includes(busca) ||
+        h.usuario?.toLowerCase().includes(busca))
     : _histDados;
 
   _histPagina = 1;
@@ -328,28 +274,6 @@ function _renderHistorico(dados) {
 function irPaginaHist(p) { _histPagina = p; filtrarHistorico(); }
 
 // ── UTILITÁRIO ──
-function _slug(str) { return str.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""); }
-
-// ── DEMO ──
-function _demoSalvarAvaliacao(idColab, tipo) {
-  const c = ATE.colaboradores.find(x => x.id === idColab);
-  if (!c) return;
-  if (tipo === "1ª AVALIAÇÃO") c.status_primeira = "REALIZADA";
-  if (tipo === "2ª AVALIAÇÃO") c.status_segunda  = "REALIZADA";
-  if (tipo === "3ª AVALIAÇÃO") c.status_terceira = "REALIZADA";
-  // Recalcular status
-  const prox = _tipoProximo(c);
-  c.status_atual = prox ? "EM DIA" : "CONCLUÍDO";
-  c.proxima_avaliacao = prox ? (prox === "2ª AVALIAÇÃO" ? c.data_segunda_avaliacao : c.data_terceira_avaliacao) : null;
-}
-
-function _demoHistorico() {
-  const acoes = ["CADASTRO","EDIÇÃO","AVALIAÇÃO REALIZADA","EXCLUSÃO"];
-  return Array.from({ length: 20 }, (_, i) => ({
-    id: `h${i}`, id_colaborador: `demo-${i % 8}`,
-    acao: acoes[i % 4],
-    usuario: ["admin","gestor","Karenina","Davydson"][i % 4],
-    data_hora: new Date(Date.now() - i * 3600000 * 6).toLocaleString("pt-BR"),
-    detalhes: `Registro de atividade #${i + 1} do sistema ATE.`
-  }));
+function _slug(str) {
+  return str.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
 }
