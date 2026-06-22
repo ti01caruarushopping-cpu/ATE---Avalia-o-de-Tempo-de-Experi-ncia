@@ -649,7 +649,7 @@ select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmln
   background: var(--primary); color: #fff;
   display: flex; flex-direction: column; gap: 2px;
   text-align: center;
-  min-height: 44px; justify-content: center;
+  min-height: 51px; justify-content: center;
 }
 .ficha-aval-col-label .ficha-aval-col-header {
   background: var(--primary-dark);
