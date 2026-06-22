@@ -136,50 +136,56 @@
           </button>
         </div>
 
+        <!-- KPI GRID — cada card é clicável via JS (dashboard.js) -->
         <div class="kpi-grid" id="kpi-grid">
-          <div class="kpi-card" data-color="blue">
+          <div class="kpi-card kpi-clickable" data-color="blue" role="button" tabindex="0" title="Ver colaboradores em experiência">
             <div class="kpi-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
             </div>
             <div class="kpi-info">
               <span class="kpi-label">Em Experiência</span>
               <span class="kpi-value" id="k-em-experiencia">—</span>
+              <span class="kpi-hint">clique para ver</span>
             </div>
           </div>
-          <div class="kpi-card" data-color="amber">
+          <div class="kpi-card kpi-clickable" data-color="amber" role="button" tabindex="0" title="Ver avaliações pendentes">
             <div class="kpi-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             </div>
             <div class="kpi-info">
               <span class="kpi-label">Pendentes</span>
               <span class="kpi-value" id="k-pendentes">—</span>
+              <span class="kpi-hint">clique para ver</span>
             </div>
           </div>
-          <div class="kpi-card" data-color="red">
+          <div class="kpi-card kpi-clickable" data-color="red" role="button" tabindex="0" title="Ver avaliações vencidas">
             <div class="kpi-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             </div>
             <div class="kpi-info">
               <span class="kpi-label">Vencidas</span>
               <span class="kpi-value" id="k-vencidas">—</span>
+              <span class="kpi-hint">clique para ver</span>
             </div>
           </div>
-          <div class="kpi-card" data-color="green">
+          <div class="kpi-card kpi-clickable" data-color="green" role="button" tabindex="0" title="Ver colaboradores concluídos">
             <div class="kpi-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
             </div>
             <div class="kpi-info">
               <span class="kpi-label">Concluídos</span>
               <span class="kpi-value" id="k-concluidos">—</span>
+              <span class="kpi-hint">clique para ver</span>
             </div>
           </div>
-          <div class="kpi-card" data-color="purple">
+          <div class="kpi-card kpi-clickable" data-color="purple" role="button" tabindex="0" title="Ver colaboradores aprovados/efetivados">
             <div class="kpi-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
             </div>
             <div class="kpi-info">
               <span class="kpi-label">% Aprovação</span>
               <span class="kpi-value" id="k-aprovacao">—</span>
+              <span class="kpi-hint">clique para ver</span>
             </div>
           </div>
         </div>
@@ -500,12 +506,10 @@
           <label>Empresa *</label>
           <select id="colab-empresa">
             <option value="">Selecione</option>
-            <option>SUBCONDOMINIO</option>
-            <option>ASS. DOS LOJISTAS</option>
-            <option>WA HOTEL</option>
-            <option>WS PARK</option>
-            <option>CORPORATE</option>
-            <option>WA EMPREENDIMENTOS</option>
+            <option>Caruaru Shopping</option>
+            <option>WA Hotel</option>
+            <option>WS Park</option>
+            <option>Corporate</option>
           </select>
         </div>
       </div>
@@ -587,9 +591,16 @@
         <h3 id="ficha-titulo">Ficha do Colaborador</h3>
         <p id="ficha-subtitulo" style="font-size:0.85rem;color:var(--muted);margin-top:2px"></p>
       </div>
-      <button class="modal-close" onclick="fecharFichaColaborador()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
-      </button>
+      <!-- Botões de ação da ficha -->
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="btn-secondary" onclick="imprimirFichaColaborador()" title="Imprimir ficha">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          Imprimir
+        </button>
+        <button class="modal-close" onclick="fecharFichaColaborador()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
     </div>
     <div class="modal-body">
       <div id="ficha-dados" class="ficha-dados-grid"></div>
