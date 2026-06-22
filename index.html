@@ -519,12 +519,12 @@
   </div>
 </div>
 
-<!-- ═══════════════ MODAL AVALIAÇÃO (SIMPLIFICADO) ═══════════════ -->
+<!-- ═══════════════ MODAL AVALIAÇÃO (12 CRITÉRIOS) ═══════════════ -->
 <div id="modal-avaliacao" class="modal-overlay hidden">
-  <div class="modal">
+  <div class="modal modal-lg">
     <div class="modal-header">
       <div>
-        <h3 id="modal-aval-title">Registrar Avaliação</h3>
+        <h3 id="modal-aval-title">Realizar Avaliação</h3>
         <p id="modal-aval-sub" style="font-size:0.85rem;color:var(--muted);margin-top:2px"></p>
       </div>
       <button class="modal-close" onclick="fecharModalAvaliacao()">
@@ -544,26 +544,26 @@
           <label>Avaliador (Gestor) *</label>
           <input type="text" id="aval-avaliador" placeholder="Nome do gestor responsável" />
         </div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label>Resultado</label>
-          <select id="aval-resultado-select">
-            <option value="APROVADO">Positivo</option>
-            <option value="REPROVADO">Negativo</option>
-          </select>
-        </div>
         <div class="form-group">
           <label>Lançado por (RH) *</label>
           <input type="text" id="aval-lancador" placeholder="Seu nome" />
         </div>
       </div>
 
-      <div class="form-row">
-        <div class="form-group">
-          <label>Observação (opcional)</label>
-          <input type="text" id="aval-observacao" placeholder="Observações sobre a avaliação" />
+      <div class="criterios-grid" id="criterios-grid"></div>
+
+      <div class="aval-resultado" id="aval-resultado">
+        <div class="resultado-item">
+          <label>Média</label>
+          <span id="media-geral">—</span>
+        </div>
+        <div class="resultado-item">
+          <label>Percentual</label>
+          <span id="pct-geral">—</span>
+        </div>
+        <div class="resultado-item">
+          <label>Resultado</label>
+          <span id="resultado-final" class="badge">—</span>
         </div>
       </div>
     </div>
@@ -573,6 +573,30 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/></svg>
         Confirmar Avaliação
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ MODAL FICHA DO COLABORADOR ═══════════════ -->
+<div id="modal-ficha" class="modal-overlay hidden">
+  <div class="modal modal-lg modal-ficha">
+    <div class="modal-header">
+      <div>
+        <h3 id="ficha-titulo">Ficha do Colaborador</h3>
+        <p id="ficha-subtitulo" style="font-size:0.85rem;color:var(--muted);margin-top:2px"></p>
+      </div>
+      <button class="modal-close" onclick="fecharFichaColaborador()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div id="ficha-dados" class="ficha-dados-grid"></div>
+
+      <div class="ficha-section-title">Avaliações de Desempenho</div>
+      <div id="ficha-avaliacoes"></div>
+
+      <div class="ficha-section-title">Recomendação Final</div>
+      <div id="ficha-recomendacao"></div>
     </div>
   </div>
 </div>
