@@ -16,7 +16,6 @@ async function carregarColaboradores() {
 }
 
 function _renderColaboradores() {
-  // Atualizar filtro de empresa
   const empresas = [...new Set(ATE.colaboradores.map(c => c.empresa).filter(Boolean))];
   const selEmpresa = document.getElementById("filtro-empresa");
   const curEmp = selEmpresa.value;
@@ -73,11 +72,11 @@ function _renderTabelaColaboradores() {
           <button class="btn-icon eval" title="Realizar avaliação" onclick="abrirModalAvaliacao('${c.id}','${_tipoAvaliacao(c)}')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
           </button>
+          <button class="btn-icon hist" title="Ver Ficha do Colaborador" onclick="abrirFichaColaborador('${c.id}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          </button>
           <button class="btn-icon edit" title="Editar" onclick="abrirModalColaborador('${c.id}')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-          </button>
-          <button class="btn-icon hist" title="Histórico" onclick="verHistoricoColab('${c.id}')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           </button>
           ${ATE.perfil === "administrador" ? `
           <button class="btn-icon del" title="Excluir" onclick="excluirColaborador('${c.id}','${c.nome.replace(/'/g,"\\'")}')">
@@ -107,7 +106,6 @@ function _tipoAvaliacao(c) {
 
 // ──────────────────────────────────────────────
 // LISTAS DINÂMICAS — Setor e Líder Imediato
-// Extraídas dos colaboradores já cadastrados, para popular os <select>
 // ──────────────────────────────────────────────
 function _listaSetoresUnicos() {
   return [...new Set(ATE.colaboradores.map(c => (c.setor || "").trim()).filter(Boolean))]
@@ -169,7 +167,6 @@ function fecharModalColaborador() {
   document.getElementById("modal-colaborador").classList.add("hidden");
 }
 
-// Preview das datas ao alterar admissão
 document.getElementById("colab-admissao")?.addEventListener("input", atualizarDatasPreview);
 
 function atualizarDatasPreview() {

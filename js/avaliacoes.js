@@ -1,9 +1,50 @@
 // ============================================================
-// ATE — avaliacoes.js  |  Controle e formulário de avaliações
+// ATE — avaliacoes.js  |  Controle, formulário de avaliações e Ficha do Colaborador
 // ============================================================
+
+// ── CRITÉRIOS OFICIAIS DA FICHA DE DESEMPENHO ──
+const CRITERIOS = [
+  "Assiduidade",
+  "Pontualidade",
+  "Comunicação",
+  "Relacionamento interpessoal",
+  "Espírito de equipe",
+  "Habilidade técnica",
+  "Maturidade emocional",
+  "Responsabilidade profissional",
+  "Criatividade",
+  "Organização",
+  "Colaborativo",
+  "Ponto eletrônico"
+];
+
+const CRITERIO_DESCRICOES = {
+  "Assiduidade": "Cumprir todos os dias de trabalho.",
+  "Pontualidade": "Cumpre os horários de acordo com a escala, sendo pontual.",
+  "Comunicação": "Habilidade em saber ouvir e facilidade de entendimento.",
+  "Relacionamento interpessoal": "Relaciona-se de forma adequada com todos da empresa.",
+  "Espírito de equipe": "Capacidade de trabalhar em equipe.",
+  "Habilidade técnica": "Conhecimento técnico e prático na função desenvolvida.",
+  "Maturidade emocional": "Equilíbrio emocional e comportamental em suas relações de trabalho.",
+  "Responsabilidade profissional": "Comportamento ético e moral no ambiente de trabalho.",
+  "Criatividade": "Imaginação útil, capacidade de imaginar ideias criativas, aplicáveis ao trabalho.",
+  "Organização": "Capacidade de controlar e programar as suas atividades.",
+  "Colaborativo": "Dispondo-se de mudança de plantão ou hora extra.",
+  "Ponto eletrônico": "Registra o ponto de forma correta, obedecendo o horário a qual foi escalado."
+};
+
+const NOTAS_LABEL = { 1: "Insatisfatório", 2: "Intermediário", 3: "Satisfatório", 4: "Excelente" };
+
+const RECOMENDACOES = [
+  { value: "PERMANECER",   label: "Permanecer no cargo — está capacitado" },
+  { value: "RETREINAR",    label: "Ser novamente treinado e avaliado, dando-o uma nova oportunidade no mesmo cargo" },
+  { value: "REMANEJAR",    label: "Ser remanejado para outro cargo de acordo com perfil técnico" },
+  { value: "DESLIGAR",     label: "Ser desligado" }
+];
 
 let _avalFiltrados = [];
 let _avalPagina = 1;
+let _notasAtuais = {};
 
 // ──────────────────────────────────────────────
 // TABELA DE CONTROLE
@@ -22,7 +63,6 @@ function _aplicarFiltroAvaliacoes() {
   const status = document.getElementById("filtro-aval-status")?.value || "";
   const lider  = document.getElementById("filtro-aval-lider")?.value || "";
 
-  // Atualizar select de líderes
   const lideres = [...new Set(ATE.colaboradores.map(c => c.lider_imediato).filter(Boolean))].sort();
   const sel = document.getElementById("filtro-aval-lider");
   if (sel && sel.options.length <= 1) {
@@ -40,7 +80,6 @@ function _aplicarFiltroAvaliacoes() {
     return matchBusca && matchLider && matchStatus;
   });
 
-  // Contar alertas
   const atrasadas = _avalFiltrados.filter(c => c.status_atual === "ATRASADO").length;
   const proximas  = _avalFiltrados.filter(c => c.status_atual === "PRÓXIMO DO VENCIMENTO").length;
   document.getElementById("badge-atrasadas").textContent = `${atrasadas} atrasada${atrasadas !== 1 ? "s" : ""}`;
@@ -73,11 +112,16 @@ function _renderTabelaAvaliacoes() {
       <td>${_avalCelula(c.data_terceira_avaliacao, c.status_terceira)}</td>
       <td>${statusBadgeHtml(c.status_atual)}</td>
       <td>
-        ${tipo ? `
-        <button class="btn-primary" style="padding:6px 12px;font-size:.78rem" onclick="abrirModalAvaliacao('${c.id}','${tipo}')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M9 11l3 3L22 4"/></svg>
-          Registrar
-        </button>` : `<span class="badge badge-blue">Concluído</span>`}
+        <div class="action-btns">
+          ${tipo ? `
+          <button class="btn-primary" style="padding:6px 12px;font-size:.78rem" onclick="abrirModalAvaliacao('${c.id}','${tipo}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M9 11l3 3L22 4"/></svg>
+            Avaliar
+          </button>` : `<span class="badge badge-blue">Concluído</span>`}
+          <button class="btn-icon hist" title="Ver Ficha" onclick="abrirFichaColaborador('${c.id}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </button>
+        </div>
       </td>
     </tr>`;
   }).join("");
@@ -108,7 +152,7 @@ function _tipoProximo(c) {
 }
 
 // ──────────────────────────────────────────────
-// MODAL DE AVALIAÇÃO — Simplificado (sem critérios/notas)
+// MODAL DE AVALIAÇÃO — 12 critérios + Data/Avaliador/Lançador
 // ──────────────────────────────────────────────
 function abrirModalAvaliacao(idColab, tipo) {
   if (!tipo) { toast("Todas as avaliações já foram realizadas.", "info"); return; }
@@ -116,68 +160,242 @@ function abrirModalAvaliacao(idColab, tipo) {
   const colab = ATE.colaboradores.find(c => c.id === idColab);
   if (!colab) return;
 
+  _notasAtuais = {};
+
   document.getElementById("aval-id-colaborador").value = idColab;
   document.getElementById("aval-tipo").value           = tipo;
   document.getElementById("modal-aval-title").textContent = `${tipo} — ${colab.nome}`;
   document.getElementById("modal-aval-sub").textContent   =
     `${colab.setor} · ${colab.cargo} · Líder: ${colab.lider_imediato}`;
 
-  // Data padrão = hoje
   const hoje = new Date();
-  document.getElementById("aval-data").value       = hoje.toISOString().split("T")[0];
-  document.getElementById("aval-avaliador").value  = "";
-  document.getElementById("aval-lancador").value   = ATE.nome || ATE.usuario;
+  document.getElementById("aval-data").value      = hoje.toISOString().split("T")[0];
+  document.getElementById("aval-avaliador").value = "";
+  document.getElementById("aval-lancador").value  = ATE.nome || ATE.usuario;
 
-  // Resultado simplificado: APROVADO por padrão (RH registra conforme avaliação do gestor)
-  document.getElementById("aval-resultado-select").value = "APROVADO";
+  const grid = document.getElementById("criterios-grid");
+  grid.innerHTML = CRITERIOS.map(c => `
+    <div class="criterio-row" id="cr-${_slug(c)}">
+      <span class="criterio-nome" title="${CRITERIO_DESCRICOES[c]}">${c}</span>
+      <div class="notas-row">
+        ${[1,2,3,4].map(n => `
+          <button type="button" class="nota-btn" data-criterio="${c}" data-nota="${n}"
+            title="${NOTAS_LABEL[n]}" onclick="selecionarNota(this,'${c}',${n})">
+            ${n}
+          </button>`).join("")}
+      </div>
+      <div class="criterio-obs">
+        <input type="text" placeholder="Observação (opcional)" id="obs-${_slug(c)}" />
+      </div>
+    </div>`).join("");
 
-  // Observação em branco
-  document.getElementById("aval-observacao").value = "";
-
+  _atualizarResultado();
   document.getElementById("modal-avaliacao").classList.remove("hidden");
-  document.getElementById("aval-avaliador").focus();
 }
 
 function fecharModalAvaliacao() {
   document.getElementById("modal-avaliacao").classList.add("hidden");
 }
 
+function selecionarNota(btn, criterio, nota) {
+  btn.closest(".notas-row").querySelectorAll(".nota-btn").forEach(b => b.classList.remove("selected"));
+  btn.classList.add("selected");
+  _notasAtuais[criterio] = nota;
+  _atualizarResultado();
+}
+
+function _atualizarResultado() {
+  const notas = Object.values(_notasAtuais);
+  if (!notas.length) {
+    document.getElementById("media-geral").textContent     = "—";
+    document.getElementById("pct-geral").textContent       = "—";
+    document.getElementById("resultado-final").textContent = "—";
+    document.getElementById("resultado-final").className   = "badge";
+    return;
+  }
+
+  const media  = notas.reduce((a, b) => a + b, 0) / notas.length;
+  const pct    = Math.round((media / 4) * 100);
+  const result = media >= 3 ? "APROVADO" : "REPROVADO";
+
+  document.getElementById("media-geral").textContent     = media.toFixed(2);
+  document.getElementById("pct-geral").textContent       = `${pct}%`;
+  document.getElementById("resultado-final").textContent = result;
+  document.getElementById("resultado-final").className   = `badge ${result === "APROVADO" ? "badge-green" : "badge-red"}`;
+}
+
 async function confirmarAvaliacao() {
-  const idColab    = document.getElementById("aval-id-colaborador").value;
-  const tipo       = document.getElementById("aval-tipo").value;
-  const data       = document.getElementById("aval-data").value;
-  const avaliador  = document.getElementById("aval-avaliador").value.trim();
-  const lancador   = document.getElementById("aval-lancador").value.trim();
-  const resultado  = document.getElementById("aval-resultado-select").value;
-  const observacao = document.getElementById("aval-observacao").value.trim();
-
-  if (!data) {
-    toast("Informe a data da avaliação.", "warning"); return;
-  }
-  if (!avaliador) {
-    toast("Informe o nome do avaliador (gestor).", "warning"); return;
+  const faltando = CRITERIOS.filter(c => !_notasAtuais[c]);
+  if (faltando.length) {
+    toast(`Avalie todos os critérios. Faltam: ${faltando.length}`, "warning");
+    faltando.forEach(c => {
+      const row = document.getElementById(`cr-${_slug(c)}`);
+      if (row) { row.style.border = "2px solid var(--red)"; setTimeout(() => row.style.border = "", 2000); }
+    });
+    return;
   }
 
-  // Envia para o backend com um único critério sintético
+  const idColab   = document.getElementById("aval-id-colaborador").value;
+  const tipo      = document.getElementById("aval-tipo").value;
+  const data      = document.getElementById("aval-data").value;
+  const avaliador = document.getElementById("aval-avaliador").value.trim();
+  const lancador  = document.getElementById("aval-lancador").value.trim();
+
+  if (!avaliador) { toast("Informe o nome do avaliador (gestor).", "warning"); return; }
+  if (!lancador)  { toast("Informe quem está lançando a avaliação (RH).", "warning"); return; }
+
+  const criterios = CRITERIOS.map(c => ({
+    criterio: c, nota: _notasAtuais[c],
+    observacao: document.getElementById(`obs-${_slug(c)}`)?.value || ""
+  }));
+
   const res = await api("salvarAvaliacao", {
-    id_colaborador: idColab,
-    tipo_avaliacao: tipo,
-    data_avaliacao: inputParaData(data),
-    avaliador,
-    lancador,
-    criterios: [{
-      criterio: "Avaliação Geral",
-      nota: resultado === "APROVADO" ? 4 : 1,
-      observacao: observacao || `Lançado por: ${lancador}`
-    }]
+    id_colaborador: idColab, tipo_avaliacao: tipo,
+    data_avaliacao: inputParaData(data), avaliador, lancador, criterios
   });
 
   if (res.ok) {
     fecharModalAvaliacao();
-    toast(`Avaliação registrada com sucesso — ${resultado}`, "success");
+    toast(`Avaliação salva! Média: ${res.media} — ${res.resultado}`, "success");
     await carregarColaboradores();
   } else {
     toast(res.msg || "Erro ao salvar avaliação.", "error");
+  }
+}
+
+// ──────────────────────────────────────────────
+// FICHA COMPLETA DO COLABORADOR
+// ──────────────────────────────────────────────
+let _fichaAtual = null;
+
+async function abrirFichaColaborador(idColab) {
+  const res = await api("getFichaColaborador", { id_colaborador: idColab });
+  if (!res.ok) { toast(res.msg || "Erro ao carregar ficha.", "error"); return; }
+
+  _fichaAtual = res;
+  _renderFichaColaborador(res);
+  document.getElementById("modal-ficha").classList.remove("hidden");
+}
+
+function fecharFichaColaborador() {
+  document.getElementById("modal-ficha").classList.add("hidden");
+  _fichaAtual = null;
+}
+
+function _renderFichaColaborador(res) {
+  const c = res.colaborador;
+
+  document.getElementById("ficha-titulo").textContent = c.nome;
+  document.getElementById("ficha-subtitulo").innerHTML =
+    `${c.cargo} · ${c.setor} · ${c.empresa}`;
+
+  // Dados cadastrais
+  document.getElementById("ficha-dados").innerHTML = `
+    <div class="ficha-dado"><label>Nome Completo</label><span>${c.nome}</span></div>
+    <div class="ficha-dado"><label>Setor</label><span>${c.setor || "—"}</span></div>
+    <div class="ficha-dado"><label>Cargo</label><span>${c.cargo || "—"}</span></div>
+    <div class="ficha-dado"><label>Líder Imediato</label><span>${c.lider_imediato || "—"}</span></div>
+    <div class="ficha-dado"><label>Empresa</label><span>${c.empresa || "—"}</span></div>
+    <div class="ficha-dado"><label>Data de Admissão</label><span>${c.data_admissao || "—"}</span></div>
+    <div class="ficha-dado"><label>Status Atual</label><span>${statusBadgeHtml(res.status_atual)}</span></div>
+    <div class="ficha-dado"><label>Situação Final</label><span>${statusBadgeHtml(c.situacao_final)}</span></div>
+  `;
+
+  // Avaliações (3 colunas lado a lado)
+  const wrap = document.getElementById("ficha-avaliacoes");
+  wrap.innerHTML = `
+    <div class="ficha-aval-grid">
+      <div class="ficha-aval-col ficha-aval-col-label">
+        <div class="ficha-aval-col-header">Critério</div>
+        ${CRITERIOS.map(crit => `<div class="ficha-crit-row" title="${CRITERIO_DESCRICOES[crit]}">${crit}</div>`).join("")}
+        <div class="ficha-crit-row ficha-crit-media">Média</div>
+        <div class="ficha-crit-row ficha-crit-resultado">Resultado</div>
+      </div>
+      ${res.avaliacoes.map(av => `
+        <div class="ficha-aval-col">
+          <div class="ficha-aval-col-header">
+            ${av.tipo}
+            ${av.preenchida ? `<span class="ficha-aval-data">${av.data_avaliacao}</span>` : `<span class="ficha-aval-data">—</span>`}
+          </div>
+          ${CRITERIOS.map(crit => {
+            if (!av.preenchida) return `<div class="ficha-crit-row ficha-crit-vazio">—</div>`;
+            const item = av.criterios.find(x => x.criterio === crit);
+            const nota = item ? item.nota : "—";
+            return `<div class="ficha-crit-row ficha-crit-nota nota-${nota}">${nota}</div>`;
+          }).join("")}
+          <div class="ficha-crit-row ficha-crit-media">${av.preenchida ? av.media : "—"}</div>
+          <div class="ficha-crit-row ficha-crit-resultado">${av.preenchida ? statusBadgeHtml(av.resultado) : "—"}</div>
+        </div>
+      `).join("")}
+    </div>
+    <div class="ficha-aval-meta">
+      ${res.avaliacoes.filter(av => av.preenchida).map(av => `
+        <div class="ficha-meta-item">
+          <strong>${av.tipo}</strong> — Avaliador: ${av.avaliador || "—"} · Lançado por: ${av.lancador || "—"}
+        </div>
+      `).join("") || `<p style="color:var(--muted);font-size:.82rem">Nenhuma avaliação registrada ainda.</p>`}
+    </div>
+  `;
+
+  // Recomendação final — só habilitada se a 3ª avaliação foi preenchida
+  const av3 = res.avaliacoes.find(a => a.tipo === "3ª AVALIAÇÃO");
+  const podeRecomendar = av3 && av3.preenchida;
+  const recSelecionada = c.recomendacao_final || "";
+
+  document.getElementById("ficha-recomendacao").innerHTML = `
+    <h3>Recomendação Final do RH</h3>
+    <p style="font-size:.82rem;color:var(--muted);margin-bottom:14px">
+      De acordo com o resultado final da avaliação acima, o colaborador deverá:
+    </p>
+    ${!podeRecomendar ? `
+      <div class="alert-item amber" style="margin-bottom:14px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span>Disponível após o registro da 3ª avaliação.</span>
+      </div>` : ""}
+    <div class="recomendacao-opcoes">
+      ${RECOMENDACOES.map(r => `
+        <label class="recomendacao-opcao ${recSelecionada === r.value ? "selected" : ""} ${!podeRecomendar ? "disabled" : ""}">
+          <input type="radio" name="recomendacao" value="${r.value}" ${recSelecionada === r.value ? "checked" : ""} ${!podeRecomendar ? "disabled" : ""} onchange="_marcarRecomendacao(this)">
+          <span>${r.label}</span>
+        </label>
+      `).join("")}
+    </div>
+    <div class="form-group" style="margin-top:14px">
+      <label>Observações da recomendação (opcional)</label>
+      <input type="text" id="ficha-recomendacao-obs" value="${(c.recomendacao_obs || "").replace(/"/g,'&quot;')}" ${!podeRecomendar ? "disabled" : ""} placeholder="Detalhes sobre a decisão..." />
+    </div>
+    <div class="modal-footer" style="padding:16px 0 0;border-top:none">
+      <button class="btn-primary" ${!podeRecomendar ? "disabled" : ""} onclick="salvarRecomendacaoFicha('${c.id}')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+        Salvar Recomendação
+      </button>
+    </div>
+  `;
+}
+
+function _marcarRecomendacao(input) {
+  document.querySelectorAll(".recomendacao-opcao").forEach(l => l.classList.remove("selected"));
+  input.closest(".recomendacao-opcao").classList.add("selected");
+}
+
+async function salvarRecomendacaoFicha(idColab) {
+  const selecionada = document.querySelector('input[name="recomendacao"]:checked');
+  if (!selecionada) { toast("Selecione uma recomendação.", "warning"); return; }
+
+  const obs = document.getElementById("ficha-recomendacao-obs")?.value || "";
+
+  const res = await api("salvarRecomendacao", {
+    id_colaborador: idColab,
+    recomendacao_final: selecionada.value,
+    recomendacao_obs: obs
+  });
+
+  if (res.ok) {
+    toast("Recomendação salva com sucesso!", "success");
+    await carregarColaboradores();
+    abrirFichaColaborador(idColab);
+  } else {
+    toast(res.msg || "Erro ao salvar recomendação.", "error");
   }
 }
 
@@ -275,5 +493,5 @@ function irPaginaHist(p) { _histPagina = p; filtrarHistorico(); }
 
 // ── UTILITÁRIO ──
 function _slug(str) {
-  return str.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+  return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
 }
