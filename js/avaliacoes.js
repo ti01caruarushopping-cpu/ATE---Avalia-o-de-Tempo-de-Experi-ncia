@@ -394,7 +394,7 @@ function imprimirFichaColaborador() {
       padding: 8px 10px; font-size: 0.72rem; font-weight: 700;
       background: var(--primary); color: #fff;
       display: flex; flex-direction: column; gap: 2px;
-      text-align: center; min-height: 40px; justify-content: center;
+      text-align: center; min-height: 51px; justify-content: center;
     }
     .ficha-aval-col-label .ficha-aval-col-header { background: var(--primary-dark); }
     .ficha-aval-data { font-size: 0.63rem; font-weight: 500; opacity: .85; font-family: var(--mono); }
@@ -403,7 +403,7 @@ function imprimirFichaColaborador() {
       padding: 7px 10px; font-size: 0.72rem;
       border-bottom: 1px solid #F0F3FA;
       text-align: center; display: flex; align-items: center; justify-content: center;
-      min-height: 32px;
+      min-height: 41px;
     }
     /* Coluna de labels: texto à esquerda, menor, pode quebrar linha */
     .ficha-aval-col-label .ficha-crit-row {
