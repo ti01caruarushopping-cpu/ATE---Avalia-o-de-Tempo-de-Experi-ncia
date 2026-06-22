@@ -23,6 +23,116 @@ function renderDashboard(d) {
   renderBarChart("chart-setor", d.porSetor || []);
   renderBarChart("chart-lider", d.porLider || []);
   renderAlerts(d);
+
+  // Tornar KPI cards clicáveis
+  _bindKpiCards();
+}
+
+// ──────────────────────────────────────────────
+// KPI CARDS CLICÁVEIS
+// ──────────────────────────────────────────────
+function _bindKpiCards() {
+  // Mapeamento: id do elemento de valor → filtro a aplicar em colaboradores
+  const kpiMap = [
+    {
+      id:      "k-em-experiencia",
+      label:   "Em Experiência",
+      filtro:  () => _filtrarColaboradoresPorKpi("situacao", "EM EXPERIÊNCIA"),
+      tooltip: "Ver colaboradores em experiência"
+    },
+    {
+      id:      "k-pendentes",
+      label:   "Pendentes",
+      filtro:  () => _filtrarColaboradoresPorKpi("status", "PRÓXIMO DO VENCIMENTO"),
+      tooltip: "Ver avaliações pendentes (próximas do vencimento)"
+    },
+    {
+      id:      "k-vencidas",
+      label:   "Vencidas",
+      filtro:  () => _filtrarColaboradoresPorKpi("status", "ATRASADO"),
+      tooltip: "Ver colaboradores com avaliações vencidas"
+    },
+    {
+      id:      "k-concluidos",
+      label:   "Concluídos",
+      filtro:  () => _filtrarColaboradoresPorKpi("status", "CONCLUÍDO"),
+      tooltip: "Ver colaboradores com processo concluído"
+    },
+    {
+      id:      "k-aprovacao",
+      label:   "Aprovados",
+      filtro:  () => _filtrarColaboradoresPorKpi("situacao", "EFETIVADO"),
+      tooltip: "Ver colaboradores efetivados (aprovados)"
+    }
+  ];
+
+  kpiMap.forEach(({ id, filtro, tooltip }) => {
+    // Sobe até o .kpi-card pai
+    const valEl = document.getElementById(id);
+    if (!valEl) return;
+    const card = valEl.closest(".kpi-card");
+    if (!card) return;
+
+    // Estilo de interatividade
+    card.style.cursor  = "pointer";
+    card.title         = tooltip;
+    card.style.transition = "transform .15s, box-shadow .15s, outline .1s";
+
+    // Remove listener antigo (evita duplicatas em re-renders)
+    card.onclick = null;
+    card.onclick = () => {
+      filtro();
+    };
+
+    // Feedback visual de hover já está no CSS, mas garantimos foco via teclado
+    card.setAttribute("tabindex", "0");
+    card.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") filtro(); };
+  });
+}
+
+function _filtrarColaboradoresPorKpi(tipo, valor) {
+  // Navega para a aba de colaboradores
+  navigateTo("colaboradores");
+
+  // Aguarda a renderização e aplica o filtro
+  setTimeout(() => {
+    const filtroStatus   = document.getElementById("filtro-status");
+    const busca          = document.getElementById("busca-colaborador");
+    const filtroEmpresa  = document.getElementById("filtro-empresa");
+
+    // Limpa filtros anteriores
+    if (busca)         busca.value         = "";
+    if (filtroEmpresa) filtroEmpresa.value = "";
+    if (filtroStatus)  filtroStatus.value  = "";
+
+    if (tipo === "status" && filtroStatus) {
+      filtroStatus.value = valor;
+    } else if (tipo === "situacao") {
+      // Filtragem por situação final não tem select dedicado na tabela,
+      // mas podemos usar o status_atual "CONCLUÍDO" para concluídos
+      // e ajustar a busca textual quando necessário.
+      // Para "EM EXPERIÊNCIA" e "EFETIVADO" usamos o mapeamento de status_atual:
+      // - EM EXPERIÊNCIA → exibe todos que não são CONCLUÍDO (sem filtro de status)
+      // - EFETIVADO      → usa o filtro "CONCLUÍDO" no status_atual (são os mesmos registros)
+      if (valor === "EFETIVADO") {
+        if (filtroStatus) filtroStatus.value = "CONCLUÍDO";
+      }
+      // Para "EM EXPERIÊNCIA" deixamos sem filtro de status pois todos os não-concluídos
+      // já aparecem — o usuário verá a lista completa de ativos.
+    }
+
+    filtrarColaboradores();
+
+    // Toast explicativo
+    const msgs = {
+      "ATRASADO":              "🔴 Mostrando colaboradores com avaliações vencidas",
+      "PRÓXIMO DO VENCIMENTO": "🟡 Mostrando colaboradores com avaliações pendentes",
+      "CONCLUÍDO":             "✅ Mostrando colaboradores com processo concluído",
+      "EM EXPERIÊNCIA":        "🔵 Mostrando todos os colaboradores em experiência",
+      "EFETIVADO":             "🟢 Mostrando colaboradores efetivados (aprovados)"
+    };
+    toast(msgs[valor] || `Filtrado por: ${valor}`, "info");
+  }, 120);
 }
 
 function renderBarChart(containerId, dados) {

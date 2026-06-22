@@ -3,6 +3,7 @@
 // ============================================================
 
 // ── CRITÉRIOS OFICIAIS DA FICHA DE DESEMPENHO ──
+// Nome curto usado nos botões de seleção de nota
 const CRITERIOS = [
   "Assiduidade",
   "Pontualidade",
@@ -16,6 +17,22 @@ const CRITERIOS = [
   "Organização",
   "Colaborativo",
   "Ponto eletrônico"
+];
+
+// Descrição completa exibida na Ficha do Colaborador (coluna Critério)
+const CRITERIOS_FICHA = [
+  "Assiduidade: Cumprir todos os dias de trabalho.",
+  "Pontualidade: Cumpre os horários de acordo com a escala, sendo pontual.",
+  "Comunicação: Habilidade em saber ouvir e facilidade de entendimento.",
+  "Relacionamento interpessoal: Relaciona-se de forma adequada com todos da empresa.",
+  "Espírito de equipe: Capacidade de trabalhar em equipe.",
+  "Habilidade técnica: Conhecimento técnico e prático na função desenvolvida.",
+  "Maturidade emocional: Equilíbrio emocional e comportamental em suas relações de trabalho.",
+  "Respo. profissional: Comportamento ético e moral no ambiente de trabalho.",
+  "Criatividade: Imaginação útil, capacidade de imaginar ideias criativas, aplicáveis ao trabalho.",
+  "Organização: Capacidade de controlar e programar as suas atividades.",
+  "Colaborativo: Dispondo-se de mudança de plantão ou hora extra.",
+  "Ponto eletrônico: Registra o ponto de forma correta, obedecendo o horário a qual foi escalado."
 ];
 
 const CRITERIO_DESCRICOES = {
@@ -282,6 +299,240 @@ function fecharFichaColaborador() {
   _fichaAtual = null;
 }
 
+// ──────────────────────────────────────────────
+// IMPRESSÃO DA FICHA
+// ──────────────────────────────────────────────
+function imprimirFichaColaborador() {
+  const fichaEl = document.getElementById("modal-ficha");
+  if (!fichaEl || fichaEl.classList.contains("hidden")) {
+    toast("Nenhuma ficha aberta para imprimir.", "warning");
+    return;
+  }
+
+  // Captura o conteúdo atual da ficha
+  const conteudo = document.querySelector("#modal-ficha .modal-body")?.innerHTML || "";
+  const titulo   = document.getElementById("ficha-titulo")?.textContent || "Ficha do Colaborador";
+  const subtitulo = document.getElementById("ficha-subtitulo")?.textContent || "";
+
+  const janela = window.open("", "_blank", "width=1000,height=750");
+  janela.document.write(`
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Ficha — ${titulo}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --primary:       #0F52BA;
+      --primary-dark:  #0A3D8F;
+      --primary-light: #E8F0FE;
+      --green:   #1E7E44; --green-bg:#E6F4EA;
+      --red:     #C62828; --red-bg:  #FDECEA;
+      --amber:   #B45309; --amber-bg:#FEF3C7;
+      --blue:    #1565C0; --blue-bg: #E3F2FD;
+      --purple:  #6D28D9; --purple-bg:#EDE9FE;
+      --surface: #FFFFFF; --bg: #F3F6FC;
+      --border:  #DDE3EE; --muted: #6B7A99;
+      --text:    #1A2340; --text-sec: #3D4F75;
+      --radius:  10px; --radius-lg: 16px;
+      --font: 'Inter', system-ui, sans-serif;
+      --mono: 'JetBrains Mono', monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--font); color: var(--text); font-size: 13px; line-height: 1.5; background: #fff; padding: 24px 32px; }
+
+    /* Cabeçalho de impressão */
+    .print-header {
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 3px solid var(--primary); padding-bottom: 14px; margin-bottom: 20px;
+    }
+    .print-brand { display: flex; align-items: center; gap: 12px; }
+    .print-brand-icon {
+      width: 44px; height: 44px; border-radius: 10px;
+      background: var(--primary); display: flex; align-items: center; justify-content: center;
+    }
+    .print-brand-icon svg { width: 28px; height: 28px; }
+    .print-brand h1 { font-size: 1.4rem; font-weight: 700; color: var(--primary); }
+    .print-brand p  { font-size: 0.75rem; color: var(--muted); }
+    .print-meta { text-align: right; font-size: 0.75rem; color: var(--muted); }
+    .print-meta strong { color: var(--text); }
+
+    /* Título da ficha */
+    .print-titulo { font-size: 1.15rem; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+    .print-subtitulo { font-size: 0.82rem; color: var(--muted); margin-bottom: 18px; }
+
+    /* Dados cadastrais */
+    .ficha-dados-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 12px; background: var(--bg);
+      border-radius: var(--radius); padding: 14px 16px; margin-bottom: 20px;
+    }
+    .ficha-dado { display: flex; flex-direction: column; gap: 2px; }
+    .ficha-dado label { font-size: 0.65rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; }
+    .ficha-dado span  { font-size: 0.82rem; font-weight: 600; color: var(--text); }
+
+    /* Título de seção */
+    .ficha-section-title {
+      font-size: 0.9rem; font-weight: 700; color: var(--text);
+      margin: 20px 0 10px; padding-bottom: 6px;
+      border-bottom: 2px solid var(--border);
+    }
+
+    /* Grid de avaliações */
+    .ficha-aval-grid {
+      display: grid; grid-template-columns: 2fr repeat(3, 1fr);
+      gap: 1px; background: var(--border);
+      border-radius: var(--radius); overflow: hidden;
+      border: 1px solid var(--border); margin-bottom: 14px;
+    }
+    .ficha-aval-col { display: flex; flex-direction: column; background: var(--surface); }
+    .ficha-aval-col-label { background: var(--surface); }
+
+    .ficha-aval-col-header {
+      padding: 8px 10px; font-size: 0.72rem; font-weight: 700;
+      background: var(--primary); color: #fff;
+      display: flex; flex-direction: column; gap: 2px;
+      text-align: center; min-height: 40px; justify-content: center;
+    }
+    .ficha-aval-col-label .ficha-aval-col-header { background: var(--primary-dark); }
+    .ficha-aval-data { font-size: 0.63rem; font-weight: 500; opacity: .85; font-family: var(--mono); }
+
+    .ficha-crit-row {
+      padding: 7px 10px; font-size: 0.72rem;
+      border-bottom: 1px solid #F0F3FA;
+      text-align: center; display: flex; align-items: center; justify-content: center;
+      min-height: 32px;
+    }
+    /* Coluna de labels: texto à esquerda, menor, pode quebrar linha */
+    .ficha-aval-col-label .ficha-crit-row {
+      justify-content: flex-start; text-align: left;
+      font-weight: 500; color: var(--text-sec);
+      font-size: 0.68rem; line-height: 1.35;
+      padding: 5px 8px;
+    }
+    .ficha-crit-row:last-child { border-bottom: none; }
+    .ficha-crit-vazio { color: var(--border); }
+    .ficha-crit-nota { font-weight: 700; font-family: var(--mono); font-size: 0.82rem; }
+    .ficha-crit-nota.nota-1 { color: var(--red); }
+    .ficha-crit-nota.nota-2 { color: var(--amber); }
+    .ficha-crit-nota.nota-3 { color: var(--blue); }
+    .ficha-crit-nota.nota-4 { color: var(--green); }
+    .ficha-crit-media    { background: var(--bg); font-weight: 700; font-family: var(--mono); }
+    .ficha-crit-resultado { background: var(--bg); }
+
+    /* Meta avaliações */
+    .ficha-aval-meta { margin-top: 10px; display: flex; flex-direction: column; gap: 5px; }
+    .ficha-meta-item {
+      font-size: 0.75rem; color: var(--text-sec);
+      background: var(--bg); padding: 6px 10px; border-radius: 6px;
+    }
+
+    /* Recomendação */
+    .recomendacao-opcoes { display: flex; flex-direction: column; gap: 6px; }
+    .recomendacao-opcao {
+      display: flex; align-items: flex-start; gap: 8px;
+      padding: 8px 12px; border-radius: 6px;
+      border: 1.5px solid var(--border); font-size: 0.78rem; color: var(--text);
+    }
+    .recomendacao-opcao.selected {
+      border-color: var(--primary); background: var(--primary-light); font-weight: 600;
+    }
+    .recomendacao-opcao input[type="radio"] { margin-top: 2px; accent-color: var(--primary); }
+
+    /* Badges */
+    .badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 8px; border-radius: 99px;
+      font-size: 0.68rem; font-weight: 700; letter-spacing: .3px;
+    }
+    .badge-green  { background: var(--green-bg);  color: var(--green); }
+    .badge-red    { background: var(--red-bg);    color: var(--red); }
+    .badge-amber  { background: var(--amber-bg);  color: var(--amber); }
+    .badge-blue   { background: var(--blue-bg);   color: var(--blue); }
+    .badge-purple { background: var(--purple-bg); color: var(--purple); }
+    .badge-gray   { background: #F0F3FA;           color: var(--muted); }
+
+    /* Alert */
+    .alert-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 12px; border-radius: 6px; font-size: 0.78rem;
+    }
+    .alert-item.amber { background: var(--amber-bg); color: var(--amber); }
+    .alert-item svg   { width: 14px; height: 14px; flex-shrink: 0; }
+
+    /* Rodapé */
+    .print-footer {
+      margin-top: 24px; padding-top: 12px;
+      border-top: 1px solid var(--border);
+      display: flex; justify-content: space-between;
+      font-size: 0.68rem; color: var(--muted);
+    }
+    .assinatura-linha {
+      display: flex; gap: 40px; margin-top: 32px;
+    }
+    .assinatura-item {
+      flex: 1; border-top: 1px solid var(--border);
+      padding-top: 6px; font-size: 0.72rem; color: var(--muted); text-align: center;
+    }
+
+    /* Ocultar botões e controles */
+    button, input[type="button"], .modal-footer,
+    [style*="border-top:none"] button { display: none !important; }
+
+    @media print {
+      body { padding: 12px 20px; }
+      @page { margin: 10mm; size: A4; }
+    }
+  </style>
+</head>
+<body>
+  <div class="print-header">
+    <div class="print-brand">
+      <div class="print-brand-icon">
+        <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M20 8C13.37 8 8 13.37 8 20s5.37 12 12 12 12-5.37 12-12S26.63 8 20 8zm0 4a3 3 0 110 6 3 3 0 010-6zm0 17.2c-4.17 0-7.87-2.13-10-5.37.05-3.32 6.67-5.13 10-5.13 3.32 0 9.95 1.81 10 5.13-2.13 3.24-5.83 5.37-10 5.37z" fill="#ffffff"/>
+        </svg>
+      </div>
+      <div>
+        <h1>ATE — Avaliação de Tempo de Experiência</h1>
+        <p>Caruaru Shopping · Recursos Humanos</p>
+      </div>
+    </div>
+    <div class="print-meta">
+      <p>Emitido em: <strong>${new Date().toLocaleDateString("pt-BR")} às ${new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</strong></p>
+      <p>Usuário: <strong>${(typeof ATE !== "undefined" ? ATE.nome || ATE.usuario : "") || "—"}</strong></p>
+    </div>
+  </div>
+
+  <div class="print-titulo">${titulo}</div>
+  <div class="print-subtitulo">${subtitulo}</div>
+
+  ${conteudo}
+
+  <div class="assinatura-linha">
+    <div class="assinatura-item">Assinatura do Colaborador</div>
+    <div class="assinatura-item">Assinatura do Gestor</div>
+    <div class="assinatura-item">Assinatura do RH</div>
+  </div>
+
+  <div class="print-footer">
+    <span>ATE · Sistema de Avaliação de Tempo de Experiência · Caruaru Shopping</span>
+    <span>Documento gerado automaticamente — ${new Date().toLocaleDateString("pt-BR")}</span>
+  </div>
+
+  <script>
+    // Aguarda fontes e imprime
+    document.fonts.ready.then(() => {
+      setTimeout(() => { window.print(); }, 400);
+    });
+  <\/script>
+</body>
+</html>`);
+  janela.document.close();
+}
+
 function _renderFichaColaborador(res) {
   const c = res.colaborador;
 
@@ -301,13 +552,13 @@ function _renderFichaColaborador(res) {
     <div class="ficha-dado"><label>Situação Final</label><span>${statusBadgeHtml(c.situacao_final)}</span></div>
   `;
 
-  // Avaliações (3 colunas lado a lado)
+  // Avaliações — coluna de critérios usa CRITERIOS_FICHA (descrição completa)
   const wrap = document.getElementById("ficha-avaliacoes");
   wrap.innerHTML = `
     <div class="ficha-aval-grid">
       <div class="ficha-aval-col ficha-aval-col-label">
-        <div class="ficha-aval-col-header">Critério</div>
-        ${CRITERIOS.map(crit => `<div class="ficha-crit-row" title="${CRITERIO_DESCRICOES[crit]}">${crit}</div>`).join("")}
+        <div class="ficha-aval-col-header">Critério de Avaliação</div>
+        ${CRITERIOS_FICHA.map(texto => `<div class="ficha-crit-row">${texto}</div>`).join("")}
         <div class="ficha-crit-row ficha-crit-media">Média</div>
         <div class="ficha-crit-row ficha-crit-resultado">Resultado</div>
       </div>
@@ -343,7 +594,6 @@ function _renderFichaColaborador(res) {
   const recSelecionada = c.recomendacao_final || "";
 
   document.getElementById("ficha-recomendacao").innerHTML = `
-    <h3>Recomendação Final do RH</h3>
     <p style="font-size:.82rem;color:var(--muted);margin-bottom:14px">
       De acordo com o resultado final da avaliação acima, o colaborador deverá:
     </p>
